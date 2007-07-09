@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.1 2007-07-09 09:40:57 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.2 2007-07-09 09:41:58 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -22,7 +22,7 @@ function versioncontrol_project_install() {
     case 'mysql':
       db_query("CREATE TABLE {versioncontrol_project_projects} (
         nid int unsigned NOT NULL default '0',
-        repoid int unsigned NOT NULL default '0',
+        repo_id int unsigned NOT NULL default '0',
         directory varchar(255) NOT NULL default '',
         PRIMARY KEY (nid),
         KEY directory (directory)
