@@ -1,0 +1,5 @@
+; $Id: versioncontrol_project.info,v 1.1 2007-07-09 09:40:57 jpetso Exp $
+name = "Version Control / Project Node Integration"
+description = "Integrates nodes of any content type with version control systems supported by the Version Control API."
+dependencies = versioncontrol
+package = Version Control
