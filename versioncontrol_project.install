@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.5 2007-07-19 12:28:57 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.6 2007-07-23 08:49:32 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -7,7 +7,7 @@
  *
  * Copyright 2006 by Karthik ("Zen", http://drupal.org/user/21209)
  * Copyright 2006, 2007 by Derek Wright ("dww", http://drupal.org/user/46549)
- * Copyright 2007 by Jakob Petsovits (http://drupal.org/user/56020)
+ * Copyright 2007 by Jakob Petsovits ("jpetso", http://drupal.org/user/56020)
  */
 
 /**
