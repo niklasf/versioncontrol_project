@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.module,v 1.17 2007-08-13 10:20:10 jpetso Exp $
+// $Id: versioncontrol_project.module,v 1.18 2007-08-13 10:25:56 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -1011,14 +1011,13 @@ function versioncontrol_project_delete_project($nid) {
  *   commit access callbacks say.
  */
 function versioncontrol_project_versioncontrol_commit_access($commit, $commit_actions, $branch = NULL) {
+  if (empty($commit_actions)) {
+    return NULL; // no idea if this is ever going to happen, but let's be prepared
+  }
   if (!variable_get('versioncontrol_project_restrict_commits', 1)) {
     return; // we don't need no restrictions
   }
   $user_projects = versioncontrol_project_get_projects_for_maintainer($commit['uid']);
-
-  if (empty($commit_actions)) {
-    return NULL; // no idea if this is ever going to happen, but let's be prepared
-  }
 
   foreach ($commit_actions as $action) {
     // Allow item modifications if they happen inside one of the user's projects
