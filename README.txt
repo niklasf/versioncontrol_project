@@ -1,4 +1,4 @@
-$Id: README.txt,v 1.1 2007-07-09 09:40:57 jpetso Exp $
+$Id: README.txt,v 1.2 2007-08-16 16:09:36 jpetso Exp $
 
 Version Control / Project Node Integration -
 Integrates nodes of any content type with version control systems
@@ -7,10 +7,6 @@ supported by the Version Control API.
 
 SHORT DESCRIPTION
 -----------------
-This module is a work in progress, and not yet ready to use.
-It's one of those modules being created within the Google Summer of Code 2007.
-When it's done, the description might look approximately like this:
-
 This module provides integration of Drupal nodes ("project nodes") with
 repositories that have been set up with Version Control API, most prominently
 featuring commit access control based on project maintainership.
