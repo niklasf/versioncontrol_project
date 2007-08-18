@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.module,v 1.21 2007-08-17 18:11:42 jpetso Exp $
+// $Id: versioncontrol_project.module,v 1.22 2007-08-18 09:01:16 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -51,7 +51,7 @@ function versioncontrol_project_menu($may_cache) {
             'weight' => 4,
           );
 
-          if(versioncontrol_is_account_approved($user->uid, $repo_id)) {
+          if (versioncontrol_is_account_approved($user->uid, $repo_id)) {
             $items[] = array(
               'path' => 'node/'. $node->nid .'/commit-access',
               'title' => t('Commit access'),
