@@ -1,4 +1,4 @@
-$Id: README.txt,v 1.2 2007-08-16 16:09:36 jpetso Exp $
+$Id: README.txt,v 1.3 2007-08-19 23:17:17 jpetso Exp $
 
 Version Control / Project Node Integration -
 Integrates nodes of any content type with version control systems
@@ -23,11 +23,10 @@ Jakob Petsovits <jpetso at gmx DOT at>
 CREDITS
 -------
 Some code in Version Control / Project Node Integration was taken from the
-CVS integration module on drupal.org, where the adapted sections
-were committed by:
-
-Derek Wright ("dww", http://drupal.org/user/46549)
-Karthik ("Zen", http://drupal.org/user/21209)
+CVS integration module on drupal.org, its authors deserve a lot of credits
+and may also hold copyright for parts of this module.
 
 This module was originally created as part of Google Summer of Code 2007,
-so Google also deserves some credits for making this possible.
+so Google deserves some credits for making this possible. Thanks also
+to Derek Wright (dww) and Andy Kirkham (AjK) for mentoring
+the Summer of Code project.
