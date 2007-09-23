@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.module,v 1.38 2007-09-23 21:16:16 jpetso Exp $
+// $Id: versioncontrol_project.module,v 1.39 2007-09-23 21:18:17 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -865,7 +865,7 @@ function versioncontrol_project_get_projects($constraints = array(), $include_un
  * Retrieve the list of all maintainers for the given project.
  *
  * @param $nid
- *   The node id of the project node for which the maintainers#
+ *   The node id of the project node for which the maintainers
  *   should be retrieved.
  *
  * @return
