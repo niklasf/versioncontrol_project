@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.module,v 1.42 2007-10-12 13:45:51 jpetso Exp $
+// $Id: versioncontrol_project.module,v 1.43 2007-10-17 13:15:23 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates nodes of any content
@@ -1313,8 +1313,8 @@ function _versioncontrol_project_check_drupal_user($object, &$user) {
     $backend = $backends[$object['repository']['vcs']];
 
     $error_message = t(
-      "** ERROR: no Drupal user matches !vcs user '!user'.\n".
-      "** Please contact a !vcs administrator for help.",
+"** ERROR: no Drupal user matches !vcs user '!user'.
+** Please contact a !vcs administrator for help.",
       array('!vcs' => $backend['name'], '!user' => $object['username'])
     );
     return array($error_message);
