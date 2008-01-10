@@ -1,5 +1,5 @@
 <?php
-// $Id: cvs_to_versioncontrol_project_update.php,v 1.1 2008-01-10 00:27:10 thehunmonkgroup Exp $
+// $Id: cvs_to_versioncontrol_project_update.php,v 1.2 2008-01-10 02:01:20 thehunmonkgroup Exp $
 
 /**
  * @file
@@ -223,8 +223,8 @@ function update_progress_page_nojs() {
     ob_end_clean();
   }
   else {
-    // Abort the update if the needed tables don't exist.
-    if (!db_table_exists('versioncontrol_project_comaintainers') || !db_table_exists('versioncontrol_project_projects')) {
+    // Abort the update if the necessary modules aren't installed.
+    if (!module_exists('versioncontrol') || !module_exists('versioncontrol_project')) {
       print update_finished_page(FALSE);
       return NULL;
     }
