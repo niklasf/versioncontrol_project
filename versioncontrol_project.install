@@ -1,9 +1,10 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.14 2008-01-09 20:03:35 thehunmonkgroup Exp $
+// $Id: versioncontrol_project.install,v 1.15 2008-01-11 04:44:01 jpetso Exp $
 /**
  * @file
- * Version Control / Project Node Integration - Integrates nodes of any content
- * type with version control systems supported by the Version Control API.
+ * Version Control / Project Node Integration - Integrates project nodes
+ * (provided by the Project module) with version control systems supported
+ * by the Version Control API.
  *
  * Copyright 2006 by Karthik ("Zen", http://drupal.org/user/21209)
  * Copyright 2006, 2007 by Derek Wright ("dww", http://drupal.org/user/46549)

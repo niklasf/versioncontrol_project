@@ -1,19 +1,18 @@
-$Id: README.txt,v 1.4 2007-08-21 17:45:42 jpetso Exp $
+$Id: README.txt,v 1.5 2008-01-11 04:44:01 jpetso Exp $
 
 Version Control / Project Node Integration -
-Integrates nodes of any content type with version control systems
-supported by the Version Control API.
+Integrates project nodes (provided by the Project module)
+with version control systems supported by the Version Control API.
 
 
 SHORT DESCRIPTION
 -----------------
-This module makes it possible for users with a VCS account to
-associate Drupal nodes ("project nodes") with repository locations and
-appoint co-maintainers for these projects, which enables commit access control
-based on project maintainership.
+This module makes it possible for users with a VCS account to associate
+project nodes with repository locations and appoint co-maintainers for these
+projects, which enables commit access control based on project maintainership.
 
 Version Control / Project Node Integration depends on the
-Version Control API module.
+Version Control API and Project modules.
 
 
 AUTHOR
