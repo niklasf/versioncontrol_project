@@ -1,5 +1,5 @@
 <?php
-// $Id: cvs_to_versioncontrol_project_update.php,v 1.6 2008-01-11 13:16:31 thehunmonkgroup Exp $
+// $Id: cvs_to_versioncontrol_project_update.php,v 1.7 2008-01-11 13:42:25 thehunmonkgroup Exp $
 
 /**
  * @file
@@ -340,6 +340,14 @@ function update_finished_page($success) {
   }
 
   $output .= theme('item_list', $links);
+
+  if ($success) {
+    $output .= "<h4>Some things to take care of now:</h4>\n";
+    $output .= "<ul>\n";
+    $output .= "<li>Visit the <a href=\"index.php?q=admin/project/versioncontrol-settings/project\">Version control settings page for project integration</a>, and make any necessary adjustments.</li>\n";
+    $output .= "<li>If you're all done with the old CVS module, <a href=\"index.php?q=admin/build/modules\">disable/uninstall it</a>.</li>\n";
+    $output .= "</ul>\n";
+  }
 
   // Output a list of queries executed
   if (!empty($_SESSION['update_results'])) {
