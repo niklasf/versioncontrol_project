@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.metrics.inc,v 1.2 2008-01-11 04:44:01 jpetso Exp $
+// $Id: versioncontrol_project.metrics.inc,v 1.3 2008-06-05 14:17:50 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates project nodes
@@ -31,15 +31,14 @@ function versioncontrol_project_lines_changed($op, $options = NULL, $node = NULL
       if (isset($node->versioncontrol_project)) {
         $repo_id = $node->versioncontrol_project['repo_id'];
       }
-      if (!($repo_id > 0)) {
+      if (!isset($repo_id) || $repo_id == 0)) {
         $error_message = t('Version control support is not enabled for this node.');
       }
       else {
         $repository = versioncontrol_get_repository($repo_id);
         if (!isset($repository) || !versioncontrol_backend_implements($repository['vcs'], 'get_commit_statistics'))
         {
-          $backends = versioncontrol_get_backends();
-          $backend = $backends[$repository['vcs']];
+          $backend = versioncontrol_get_backend($repository);
           $error_message = t('The @vcs backend has no support for commit statistics.',
             array('@vcs' => $backend['name'])
           );
