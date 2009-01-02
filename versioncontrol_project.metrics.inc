@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.metrics.inc,v 1.4 2009-01-02 19:19:45 jpetso Exp $
+// $Id: versioncontrol_project.metrics.inc,v 1.5 2009-01-02 21:29:37 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates project nodes
@@ -10,6 +10,7 @@
  * providing node metrics based on VCS data.
  *
  * Copyright 2007 by Peter Cawley ("corsix", http://drupal.org/user/210422)
+ * Copyright 2008 by Jakob Petsovits ("jpetso", http://drupal.org/user/56020)
  */
 
 function versioncontrol_project_metrics_functions() {
