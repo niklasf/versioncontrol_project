@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.18 2009-01-07 00:25:32 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.19 2009-01-10 15:38:12 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates project nodes
@@ -108,7 +108,7 @@ function versioncontrol_project_uninstall() {
 /**
  * Update 6100: Blah blah blah.
  */
-/*function versioncontrol_project_update_6100() {
+/* function versioncontrol_project_update_6100() {
   $ret = array();
   $ret[] = update_sql('UPDATE {versioncontrol_project_blah}
                         SET value = othervalue');
