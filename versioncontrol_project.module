@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.module,v 1.64 2009-02-09 13:27:50 jpetso Exp $
+// $Id: versioncontrol_project.module,v 1.65 2009-02-09 15:17:16 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates project nodes
@@ -469,8 +469,6 @@ function versioncontrol_project_commit_access_form(&$form_state, $node) {
   $form = array();
   $project = $node->versioncontrol_project;
   $repository = versioncontrol_get_repository($project['repo_id']);
-
-  drupal_set_title(t('Commit access for @title', array('@title' => $node->title)));
 
   if ($node->type == 'project_project') {
     project_project_set_breadcrumb($node);
