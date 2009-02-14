@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.20 2009-02-10 17:50:32 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.21 2009-02-14 14:19:51 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node Integration - Integrates project nodes
@@ -118,6 +118,31 @@ function versioncontrol_project_schema() {
 function versioncontrol_project_install() {
   // Create tables.
   drupal_install_schema('versioncontrol_project');
+}
+
+/**
+ * Implementation of hook_enable().
+ */
+function versioncontrol_project_enable() {
+  require_once(drupal_get_path('module', 'versioncontrol_project') .'/versioncontrol_project.module');
+
+  // Check to make sure all existing projects are entered in the
+  // {versioncontrol_project_projects} table, and add if not.
+  $vc_projects = array();
+  $projects = array();
+  $current_vc_projects = db_query("SELECT nid FROM {versioncontrol_project_projects}");
+  while ($vc_project = db_fetch_object($current_vc_projects)) {
+    $vc_projects[] = $vc_project->nid;
+  }
+  $projects = db_query("SELECT nid FROM {node} WHERE type = 'project_project'");
+  while ($project = db_fetch_array($projects)) {
+    if (!in_array($project['nid'], $vc_projects)) {
+      $project['repo_id'] = 0;
+      versioncontrol_project_set_project($project);
+    }
+  }
+
+  _versioncontrol_project_write_missing_item_associations();
 }
 
 /**
