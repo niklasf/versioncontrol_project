@@ -1,5 +1,5 @@
-; $Id: versioncontrol_project.info,v 1.3 2009-01-02 21:29:37 jpetso Exp $
-name = "Version Control / Project Node Integration"
+; $Id: versioncontrol_project.info,v 1.4 2009-02-19 22:43:01 jpetso Exp $
+name = "Version Control / Project Node integration"
 description = "Integrates project nodes (provided by the Project module) with version control systems supported by the Version Control API."
 dependencies[] = versioncontrol
 dependencies[] = project

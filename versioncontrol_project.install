@@ -1,8 +1,8 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.21 2009-02-14 14:19:51 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.22 2009-02-19 22:43:01 jpetso Exp $
 /**
  * @file
- * Version Control / Project Node Integration - Integrates project nodes
+ * Version Control / Project Node integration - Integrates project nodes
  * (provided by the Project module) with version control systems supported
  * by the Version Control API.
  *
