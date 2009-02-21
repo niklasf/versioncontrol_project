@@ -1,18 +1,23 @@
 #!/usr/bin/php
 <?php
 
-// $Id: package-release-nodes.php,v 1.1 2009-02-21 16:23:41 jpetso Exp $
+// $Id: package-release-nodes.php,v 1.2 2009-02-21 16:39:59 jpetso Exp $
 
 /**
  * @file
  * Automated packaging script to generate tarballs from release nodes.
  *
- * @author Derek Wright (http://drupal.org/user/46549)
+ * Copyright 2006, 2007, 2008, 2009 by Derek Wright ("dww", http://drupal.org/user/46549)
+ * Copyright 2006 by Andy Kirkham ("AjK", http://drupal.org/user/39030)
+ * Copyright 2007 by Earnie Boyd ("earnie", http://drupal.org/user/86710)
+ * Copyright 2007 by Andrew Morton ("drewish", http://drupal.org/user/34869)
+ * Copyright 2008 by Gábor Hojtsy (http://drupal.org/user/4166)
+ * Copyright 2009 by Adam Light ("aclight", http://drupal.org/user/86358)
+ * Copyright 2009 by Jakob Petsovits ("jpetso", http://drupal.org/user/56020)
  *
  * TODO:
  * - translation stats
  * - correctly handle N files per release, package to .zip and .tgz, etc.
- *
  */
 
 // ------------------------------------------------------------
