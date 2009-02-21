@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_release.module,v 1.1 2009-02-21 01:28:09 jpetso Exp $
+// $Id: versioncontrol_release.module,v 1.2 2009-02-21 01:52:18 jpetso Exp $
 /**
  * @file
  * Version Control / Release Node integration - Integrates release nodes
@@ -531,6 +531,23 @@ function versioncontrol_release_nodeapi(&$node, $op, $arg = NULL) {
         $label = versioncontrol_release_get_release_label($node->nid);
         if (!empty($label)) {
           $node->versioncontrol_release = array('label' => $label);
+        }
+        return;
+
+      case 'view':
+        if (!empty($node->versioncontrol_release)) {
+          $label = $node->versioncontrol_release['label'];
+
+          if ($label['type'] == VERSIONCONTROL_OPERATION_BRANCH) {
+            $output = t('Nightly development snapshot from branch: @branch', array('@branch' => $label['name']));
+          }
+          else {
+            $output = t('Official release from tag: @tag', array('@tag' => $label['name']));
+          }
+          $node->content['versioncontrol_release'] = array(
+            '#value' => '<small>' . $output . '</small><br/>',
+            '#weight' => -3,
+          );
         }
         return;
 
