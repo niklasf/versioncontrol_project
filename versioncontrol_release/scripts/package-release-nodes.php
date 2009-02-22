@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-// $Id: package-release-nodes.php,v 1.3 2009-02-22 17:20:53 jpetso Exp $
+// $Id: package-release-nodes.php,v 1.4 2009-02-22 21:22:14 jpetso Exp $
 
 /**
  * @file
@@ -95,8 +95,6 @@ umask(0022);
 
 require_once 'includes/bootstrap.inc';
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-// We have to initialize the theme() system before we leave $drupal_root
-$hack = theme('placeholder', 'hack');
 
 if ($task == 'check' || $task == 'repair') {
   verify_packages($task, $project_id);
