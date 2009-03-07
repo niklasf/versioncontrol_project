@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-// $Id: package-release-nodes.php,v 1.8 2009-02-28 10:07:43 jpetso Exp $
+// $Id: package-release-nodes.php,v 1.9 2009-03-07 21:58:34 jpetso Exp $
 
 /**
  * @file
@@ -95,11 +95,6 @@ umask(0022);
 
 require_once 'includes/bootstrap.inc';
 drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-
-// Set a variable so that on sites using DB replication, we ensure that all
-// our queries are against the primary database to avoid problems where the
-// connection to a secondary DB might timeout causing node_load() to fail.
-$_SESSION['not_slavesafe'] = TRUE;
 
 if ($task == 'check' || $task == 'repair') {
   verify_packages($task, $project_id);
@@ -806,6 +801,11 @@ function package_release_update_node($nid, $file_path) {
   // nodes in RAM, so we reset the node_load() cache each time we call it.
   $status = db_result(db_query("SELECT status from {node} WHERE nid = %d", $nid));
   if (empty($status)) {
+    // If the site is using DB replication, force this node_load() to use the
+    // primary database to avoid node_load() failures.
+    if (function_exists('db_set_ignore_slave')) {
+      db_set_ignore_slave();
+    }
     $node = node_load($nid, NULL, TRUE);
     if (!empty($node->nid)) {
       $node->status = 1;
