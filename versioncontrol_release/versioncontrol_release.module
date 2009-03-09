@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_release.module,v 1.7 2009-03-07 23:08:20 jpetso Exp $
+// $Id: versioncontrol_release.module,v 1.8 2009-03-09 04:36:22 jpetso Exp $
 /**
  * @file
  * Version Control / Release Node integration - Integrates release nodes
@@ -121,25 +121,6 @@ function versioncontrol_release_get_version_from_label($label, $project_node) {
   else {
     return empty($version) ? FALSE : ((object) $version);
   }
-}
-
-/**
- * Returns the VCS label name that should match the given version information.
- *
- * If there is a local, site-specific implementation, use that.  Otherwise, the
- * label name is made by concatenating all parts of the version with hyphens.
- */
-function versioncontrol_release_get_label_name_from_version($version, $project) {
-  if (function_exists('versioncontrol_release_local_get_tag_from_version')) {
-    return versioncontrol_release_local_get_tag_from_version($version, $project);
-  }
-  $version_array = (array) $version;
-
-  if ($version_array['version_extra'] == 'dev') {
-    unset($version_array['version_extra']);
-  }
-  $label_name = implode('-', $version_array);
-  return $label_name;
 }
 
 /**
