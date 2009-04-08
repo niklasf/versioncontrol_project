@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_release.module,v 1.10 2009-03-21 02:32:36 jpetso Exp $
+// $Id: versioncontrol_release.module,v 1.11 2009-04-08 22:36:59 jpetso Exp $
 /**
  * @file
  * Version Control / Release Node integration - Integrates release nodes
@@ -26,6 +26,22 @@ function versioncontrol_release_menu() {
     'type' => MENU_LOCAL_TASK,
   );
   return $items;
+}
+
+/**
+ * Return TRUE if the given backend implements all functionality that is
+ * required for proper version control / release node integration.
+ */
+function versioncontrol_release_is_supported_backend($vcs) {
+  $required_functions = array(
+    'get_item', 'get_parallel_items', 'export_directory',
+  );
+  foreach ($required_functions as $function) {
+    if (!versioncontrol_backend_implements($vcs, $function)) {
+      return FALSE;
+    }
+  }
+  return TRUE;
 }
 
 /**
@@ -137,6 +153,9 @@ function versioncontrol_release_get_possible_labels($project_node) {
   if (empty($repository)) {
     return array();
   }
+  if (!versioncontrol_release_is_supported_backend($repository['vcs'])) {
+    return array();
+  }
   $directory_item = versioncontrol_get_item($repository, $project['directory']);
 
   if (empty($directory_item)) {
@@ -236,7 +255,15 @@ function versioncontrol_release_project_release_form_alter_add(&$form, &$form_st
   if (!versioncontrol_project_node_uses_versioncontrol($project_node)) {
     return;
   }
+  $project = $project_node->versioncontrol_project;
+  $repository = versioncontrol_get_repository($project['repo_id']);
 
+  if (empty($repository)) {
+    return;
+  }
+  if (!versioncontrol_release_is_supported_backend($repository['vcs'])) {
+    return;
+  }
   if (empty($project_node->project_release['releases'])) {
     return; // This project does not support releases, nothing to alter.
   }
