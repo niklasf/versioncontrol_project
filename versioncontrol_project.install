@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.22 2009-02-19 22:43:01 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.23 2009-05-29 16:21:56 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node integration - Integrates project nodes
@@ -224,5 +224,17 @@ function versioncontrol_project_update_6100() {
     'query' => t('Countless queries (probably), inserting project associations into {versioncontrol_project_items} and {versioncontrol_project_operations}.'),
   );
 
+  return $ret;
+}
+
+/**
+ * Update 6101 (from 6.x-1.0-rc1 to rc2):
+ * String deltas for the "active developers" block.
+ */
+function versioncontrol_project_update_6101() {
+  $ret = array();
+  $ret[] = update_sql("
+    UPDATE {blocks} SET delta = 'versioncontrol_project_site_active_projects'
+    WHERE delta = '0' AND module = 'versioncontrol_project'");
   return $ret;
 }
