@@ -1,5 +1,5 @@
 <?php
-// $Id: versioncontrol_project.install,v 1.23 2009-05-29 16:21:56 jpetso Exp $
+// $Id: versioncontrol_project.install,v 1.24 2009-05-31 17:32:33 jpetso Exp $
 /**
  * @file
  * Version Control / Project Node integration - Integrates project nodes
@@ -234,7 +234,7 @@ function versioncontrol_project_update_6100() {
 function versioncontrol_project_update_6101() {
   $ret = array();
   $ret[] = update_sql("
-    UPDATE {blocks} SET delta = 'versioncontrol_project_site_active_projects'
+    UPDATE {blocks} SET delta = 'site_active_projects'
     WHERE delta = '0' AND module = 'versioncontrol_project'");
   return $ret;
 }
