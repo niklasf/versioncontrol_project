@@ -28,15 +28,7 @@ define('VERSIONCONTROL_PROJECT_ASSOCIATED_PUBLISHED', 2);
 //@}
 
 
-/**
- * Implementation of hook_boot():
- * Code that is run on every page request (even on cached ones).
- */
-function versioncontrol_project_boot() {
-  if (module_exists('metrics')) {
-    include_once(drupal_get_path('module', 'versioncontrol_project') .'/versioncontrol_project.metrics.inc');
-  }
-}
+// @todo removed hook_boot implementation that popped in project metrics; replace as appropriate
 
 /**
  * Check if any project/item associations have been missed, and if so,
@@ -149,6 +141,8 @@ function versioncontrol_project_node_load($nid) {
  * Get the version-control-integrated project node from the currently active
  * menu context, if possible.
  *
+ * @todo port
+ *
  * @return
  *   A fully loaded project $node object if the currently active menu has a
  *   project node context, or FALSE if the menu isn't pointing to a
@@ -169,6 +163,8 @@ function versioncontrol_project_node_from_menu() {
  * Custom access callback, ensuring that the current user (or the one given
  * in @p $account, if set) is permitted to view and edit the list of people
  * with commit access for a given project node.
+ *
+ * @todo port
  *
  * @param $project_node
  *   A project node associated to a repository location, ideally loaded
@@ -211,6 +207,8 @@ function versioncontrol_project_project_page_link_alter(&$links, $node) {
 /**
  * Form callback for 'admin/project/versioncontrol-settings/project':
  * Global settings for this module.
+ * @todo port
+ * @todo consider how to rework this entire approach into something more granular.
  */
 function versioncontrol_project_admin_form(&$form_state) {
   $form = array();
@@ -334,6 +332,8 @@ function versioncontrol_project_nodeapi(&$node, $op, $arg = NULL) {
  * Implementation of hook_form_alter():
  * Add a fieldset to the add/edit project form where the user can specify
  * the project's repository and path.
+ *
+ * @todo port
  */
 function versioncontrol_project_form_alter(&$form, $form_state, $form_id) {
   if (isset($form['#id']) && $form['#id'] == 'node-form' && $form['#node']->type == 'project_project') {
@@ -409,6 +409,8 @@ function versioncontrol_project_form_alter(&$form, $form_state, $form_id) {
 
 /**
  * Validate the add/edit project form before it is submitted.
+ *
+ * @todo port
  */
 function versioncontrol_project_form_validate($form, &$form_state) {
   $repo_id = $form_state['values']['repo_id'];
@@ -520,6 +522,8 @@ function _versioncontrol_project_remove_trailing_slashes($directory) {
  * version, the real form is done in the theming function further down,
  * as we don't want to drupal_render() the "new user" textfield and the
  * "Grant access" button at this point already.
+ *
+ * @todo remove or port
  */
 function versioncontrol_project_commit_access_form(&$form_state, $node) {
   $form = array();
@@ -579,6 +583,8 @@ function versioncontrol_project_commit_access_form(&$form_state, $node) {
 /**
  * The maintainers table for the above commit access form,
  * constructed by means of an '#after_build' callback function.
+ *
+ * @todo remove or port
  */
 function versioncontrol_project_commit_access_table($form, $form_state) {
   $node = $form['#node'];
@@ -628,6 +634,8 @@ function versioncontrol_project_commit_access_table($form, $form_state) {
 /**
  * The validation hook for the commit access form:
  * check the validity of the new project maintainer that should be added.
+ *
+ * @todo remove or port
  */
 function versioncontrol_project_commit_access_form_validate($form, &$form_state) {
   $username = $form_state['values']['username'];
@@ -670,6 +678,8 @@ function versioncontrol_project_commit_access_form_validate($form, &$form_state)
 
 /**
  * The submit hook for the commit access form: add a new project maintainer.
+ *
+ * @todo remove
  */
 function versioncontrol_project_commit_access_form_submit($form, &$form_state) {
   $nid = $form['#nid'];
@@ -688,6 +698,8 @@ function versioncontrol_project_commit_access_form_submit($form, &$form_state) {
 /**
  * Form callback for 'node/%versioncontrol_project_node/commit-access/%user/delete':
  * Provide a form to confirm deletion of a user's commit access.
+ *
+ * @todo remove
  */
 function versioncontrol_project_commit_access_delete_confirm(&$form_state, $node, $deleted_user) {
   $form = array();
@@ -731,6 +743,8 @@ function versioncontrol_project_commit_access_delete_confirm(&$form_state, $node
 
 /**
  * Delete the repository when the confirmation form is submitted.
+ *
+ * @todo remove
  */
 function versioncontrol_project_commit_access_delete_confirm_submit($form, &$form_state) {
   $nid = $form['#nid'];
@@ -745,6 +759,8 @@ function versioncontrol_project_commit_access_delete_confirm_submit($form, &$for
 
 /**
  * Page callback for 'node/%versioncontrol_project_node/commitlog'.
+ *
+ * @todo port, this all needs to be views-driven
  */
 function versioncontrol_project_commitlog($node) {
   drupal_set_title(t('Commits for @title', array('@title' => $node->title)));
@@ -757,6 +773,8 @@ function versioncontrol_project_commitlog($node) {
 
 /**
  * Page callback for 'node/%versioncontrol_project_node/developers'.
+ *
+ * @todo port
  */
 function versioncontrol_project_developers($node) {
   $title = check_plain($node->title);
@@ -784,6 +802,8 @@ function versioncontrol_project_developers($node) {
 /**
  * Implementation of hook_user():
  * Add a list of projects to the user page that the user has committed to.
+ *
+ * @todo port, or at least ensure this still works
  */
 function versioncontrol_project_user($type, &$edit, &$account, $category = NULL) {
   if ($type == 'view') {
@@ -831,6 +851,8 @@ function versioncontrol_project_user($type, &$edit, &$account, $category = NULL)
 
 /**
  * Implementation of hook_block(): Present a list of the most active projects.
+ *
+ * @todo port, this should be done by views
  */
 function versioncontrol_project_block($op = 'list', $delta = 0, $edit = array()) {
   if ($op == 'list') {
@@ -875,6 +897,8 @@ function versioncontrol_project_block($op = 'list', $delta = 0, $edit = array())
 
 /**
  * Implementation of hook_block($op='view') for the "active projects" block.
+ *
+ *  @todo port, this should be done by views
  */
 function versioncontrol_project_block_site_active_projects() {
   $block = array();
@@ -913,6 +937,8 @@ function versioncontrol_project_block_site_active_projects() {
  * Implementation of hook_block($op='configure') for the project developers
  * or maintainers block.
  *
+ * @todo remove, irrelevant with views
+ *
  * @param $delta
  *   The block delta: either 'project_developers' or 'project_maintainers'.
  */
@@ -937,6 +963,8 @@ function versioncontrol_project_block_project_committers_configure($delta) {
  * Implementation of hook_block($op='save') for the project developers or
  * maintainers block.
  *
+ * @todo remove, irrelevant with views
+ *
  * @param $delta
  *   The block delta: either 'project_developers' or 'project_maintainers'.
  */
@@ -952,6 +980,8 @@ function versioncontrol_project_block_project_committers_save($delta, $edit) {
 /**
  * Implementation of hook_block($op='view') for the project developers or
  * maintainers block.
+ *
+ * @todo remove, irrelevant with views
  *
  * @param $delta
  *   The block delta: either 'project_developers' or 'project_maintainers'.
@@ -1004,6 +1034,9 @@ function versioncontrol_project_block_project_committers($delta) {
   return $block;
 }
 
+/**
+ * @todo remove, irrelevant with views
+ */
 function _versioncontrol_project_block_cache_get($cid) {
   $data = db_result(db_query("SELECT data FROM {versioncontrol_project_cache_block}
                               WHERE cid = '%s'", $cid));
@@ -1012,6 +1045,9 @@ function _versioncontrol_project_block_cache_get($cid) {
   }
 }
 
+/**
+ * @todo remove, irrelevant with views
+ */
 function _versioncontrol_project_block_cache_set($cid, $data) {
   if (empty($data)) {
     db_query("DELETE FROM {versioncontrol_project_cache_block}
@@ -1028,6 +1064,9 @@ function _versioncontrol_project_block_cache_set($cid, $data) {
   }
 }
 
+/**
+ * @todo remove, irrelevant with views
+ */
 function _versioncontrol_project_block_cache_clear() {
   db_query("DELETE FROM {versioncontrol_project_cache_block}");
 }
@@ -1036,6 +1075,8 @@ function _versioncontrol_project_block_cache_clear() {
 /**
  * Implementation of hook_commitlog_constraints():
  * Provide a list of supported constraints and corresponding request attributes.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_commitlog_constraints() {
   return array(
@@ -1049,6 +1090,8 @@ function versioncontrol_project_commitlog_constraints() {
  * Implementation of hook_versioncontrol_operation_constraint_info().
  * This module adds the native operation constraint 'nids', which filters
  * by the nid of project nodes associated to the operations.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_versioncontrol_operation_constraint_info() {
   return array(
@@ -1065,6 +1108,8 @@ function versioncontrol_project_versioncontrol_operation_constraint_info() {
  * Return a modified version of the given operation constraints that includes
  * the given project specific constraints in a way that the Version Control API
  * can understand it.
+ *
+ * @todo remove misguided overengineering, replaced by views
  *
  * @param $constraints
  *   The constraints array that were passed to versioncontrol_get_operations().
@@ -1093,6 +1138,8 @@ function versioncontrol_project_versioncontrol_operation_constraints_alter(&$con
 
 /**
  * Filter operations by associated project nodes.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_operation_constraint_nids($constraint, &$tables, &$and_constraints, &$params) {
   $placeholders = array();
@@ -1106,6 +1153,8 @@ function versioncontrol_project_operation_constraint_nids($constraint, &$tables,
 
 /**
  * Filter operations by associated project node status.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_operation_constraint_project_relation($constraint, &$tables, &$and_constraints, &$params) {
   $and_constraints[] = $tables['versioncontrol_project_operations']['alias'] .'.nid <> %d';
@@ -1121,6 +1170,8 @@ function versioncontrol_project_operation_constraint_project_relation($constrain
  * Take an existing @p $tables array and add the table join for
  * {versioncontrol_project_operations}. Only meant to be used within a
  * constraint construction callback.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_table_project_operations_join(&$tables) {
   if (!isset($tables['versioncontrol_project_operations'])) {
@@ -1135,6 +1186,8 @@ function versioncontrol_project_table_project_operations_join(&$tables) {
  * Take an existing @p $tables array and add the table joins for
  * {versioncontrol_project_operations} and {node}. Only meant to be used within
  * a constraint construction callback.
+ *
+ * @todo remove misguided overengineering, replaced by views
  */
 function versioncontrol_project_table_project_node_join(&$tables) {
   if (!isset($tables['versioncontrol_project_node'])) {
@@ -1214,6 +1267,8 @@ function versioncontrol_project_get_projects_for_maintainer($uid, $include_unpub
 
 /**
  * Retrieve a set of projects that match the given constraints.
+ *
+ * @todo port. this logic is RIDICULOUS.
  *
  * @param $constraints
  *   An optional array of constraints. Possible array elements are:
@@ -1439,6 +1494,8 @@ function _versioncontrol_project_get_comaintainers($nid) {
 /**
  * Retrieve the project for the given item (file or directory) in a repository.
  *
+ * @todo port, mostly by removing. this code is stupidly CVS-centric. if preserved at all, it should go into versioncontrol_cvs
+ *
  * @param $repository
  *   The repository which contains the item, or a plain repo_id.
  * @param $item
@@ -1531,6 +1588,8 @@ function versioncontrol_project_get_project_for_item($repository, $item, $includ
  * in order to distinguish between items without association vs. items that
  * have not yet been processed, so that continuous database monitoring is
  * not necessary.)
+ *
+ * @todo remove. this line of associating logic seems pointless and overengineered.
  */
 function _versioncontrol_project_add_item_association($item_revision_id, $project_nid) {
   $association_exists = db_result(db_query(
@@ -1595,6 +1654,8 @@ function _versioncontrol_project_add_item_association($item_revision_id, $projec
 /**
  * Remove a project/item association from the database, and regenerate any
  * existing project/operation associations that included this item.
+ *
+ * @todo remove. this line of associating logic seems pointless and overengineered.
  */
 function _versioncontrol_project_remove_item_association($item_revision_id, $project_nid) {
   if ($project_nid == VERSIONCONTROL_PROJECT_NID_NONE) {
@@ -1637,6 +1698,8 @@ function _versioncontrol_project_remove_item_association($item_revision_id, $pro
  * Regenerate the project/operation association cache for the given operations
  * (an array of $operation['vc_op_id'] values) from scratch. To be called
  * whenever a related operation item has a project/item association removed.
+ *
+ * @todo remove
  */
 function _versioncontrol_project_regenerate_operation_associations($vc_op_ids) {
   if (empty($vc_op_ids)) {
@@ -1672,6 +1735,8 @@ function _versioncontrol_project_regenerate_operation_associations($vc_op_ids) {
 /**
  * Add or update a project. This will fail if the given project's nid doesn't
  * correspond to an existing node.
+ *
+ * @todo port
  *
  * @param $project
  *   The project array containing the new or existing repository.
@@ -1805,6 +1870,8 @@ function versioncontrol_project_delete_project($nid) {
  * In case the "restrict project creation" option on the admin form is enabled
  * and the user lacks a VCS account, project node creation is not allowed.
  *
+ * @todo port. this global logic is icky
+ *
  * @return
  *   TRUE if the user may create project nodes, or FALSE otherwise.
  */
@@ -1826,6 +1893,8 @@ function versioncontrol_project_creation_is_allowed($uid) {
 /**
  * Implementation of hook_versioncontrol_write_access():
  * Project based commit/branch/tag restrictions.
+ *
+ * @todo port, and rethink
  *
  * @return
  *   An array with error messages (without trailing newlines) if the commit
@@ -1907,6 +1976,8 @@ function _versioncontrol_project_get_project_error_appendix($project = NULL) {
 /**
  * Implementation of hook_versioncontrol_account():
  * Delete commit access for accounts that are being deleted.
+ *
+ * @todo remove
  */
 function versioncontrol_project_versioncontrol_account($op, $uid, $username, $repository, $additional_data = array()) {
   if ($op == 'delete') {
@@ -1922,6 +1993,8 @@ function versioncontrol_project_versioncontrol_account($op, $uid, $username, $re
  * when the operation actually happens - operations can also be inserted
  * by a cron script when the actual commit/branch/tag has been accomplished
  * for quite a while already.
+ *
+ * @todo port, we're rethinking the whole operations thing
  */
 function versioncontrol_project_versioncontrol_operation($op, $operation, $operation_items) {
   switch ($op) {
@@ -1958,6 +2031,8 @@ function versioncontrol_project_versioncontrol_operation($op, $operation, $opera
 /**
  * Act on database changes when VCS repositories are inserted,
  * updated or deleted.
+ *
+ * @todo port
  */
 function versioncontrol_project_versioncontrol_repository($op, $repository) {
   switch ($op) {
