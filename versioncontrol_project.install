@@ -54,7 +54,18 @@ function versioncontrol_project_enable() {
 
   // Check to make sure all existing projects are entered in the
   // {versioncontrol_project_projects} table, and add if not.
-  
+  $vc_projects = array();
+  $projects = array();
+  $current_vc_projects = db_query("SELECT nid FROM {versioncontrol_project_projects}");
+  while ($vc_project = db_fetch_object($current_vc_projects)) {
+    $vc_projects[] = $vc_project->nid;
+  }
+  $projects = db_query("SELECT nid FROM {node} WHERE type = 'project_project'");
+  while ($project = db_fetch_array($projects)) {
+    if (!in_array($project['nid'], $vc_projects)) {
+      versioncontrol_project_set_project($project['nid'], 0);
+    }
+  }
 }
 
 /**
