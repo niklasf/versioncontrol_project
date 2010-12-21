@@ -26,13 +26,13 @@ function versioncontrol_project_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
   if ($node->type == 'project_project') {
     switch ($op) {
       case 'load':
-        versioncontrol_project_project_load($node);
+        versioncontrol_project_project_nodeapi_load($node);
         break;
       case 'insert':
-        versioncontrol_project_project_insert($node);
+        versioncontrol_project_project_nodeapi_insert($node);
         break;
       case 'delete':
-        versioncontrol_project_project_delete($node);
+        versioncontrol_project_project_nodeapi_delete($node);
         break;
     }
   }
@@ -41,7 +41,7 @@ function versioncontrol_project_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
 /**
  * Load versioncontrol_project fields into project node object.
  */
-function versioncontrol_project_project_load(&$node) {
+function versioncontrol_project_project_nodeapi_load(&$node) {
   $result = db_fetch_object(db_query('SELECT * FROM {versioncontrol_project_projects} WHERE nid = %d', $node->nid));
   if ($result) {
     $fields = array('repo_id');
@@ -55,14 +55,14 @@ function versioncontrol_project_project_load(&$node) {
 /**
  * Save versioncontrol_project information when a new project is created. 
  */
-function versioncontrol_project_project_insert(&$node) {
+function versioncontrol_project_project_nodeapi_insert(&$node) {
   db_query("INSERT INTO {versioncontrol_project_projects} (nid, repo_id) VALUES (%d, %d)", $node->nid, 0);
 }
 
 /**
  * Delete versioncontrol_project information when a new project is deleted.
  */
-function versioncontrol_project_project_delete(&$node) {
+function versioncontrol_project_project_nodeapi_delete(&$node) {
   db_query("DELETE FROM {versioncontrol_project_projects} WHERE nid = %d", $node->nid);
 }
 
@@ -87,8 +87,22 @@ function versioncontrol_project_set_project($project_id, $repo_id) {
  */
 function versioncontrol_project_repository_load($project_id) {
   $repo_id = db_result(db_query("SELECT repo_id FROM {versioncontrol_project_projects} WHERE nid = %d", $project_id));
-  $repository = versioncontrol_repository_load_multiple(array($repo_id));
-  return empty($repository) ? FALSE : reset($repository);
+  if ($repo_id) {
+    $repository = versioncontrol_repository_load_multiple(array($repo_id));
+    return empty($repository) ? FALSE : reset($repository);
+  }
+  return FALSE;
+}
+
+/**
+ * Load the project object associated with a repo.
+ */
+function versioncontrol_project_project_load($repo_id) {
+  $nid = db_result(db_query("SELECT nid FROM {versioncontrol_project_projects} WHERE repo_id = %d", $repo_id));
+  if ($nid) {
+    return node_load($nid);
+  }
+  return FALSE;
 }
 
 /**
@@ -96,7 +110,10 @@ function versioncontrol_project_repository_load($project_id) {
  */
 function versioncontrol_project_versioncontrol_entity_repository_delete($repository) {
   // Delete mapping when repo is deleted.
-  db_query("DELETE FROM {versioncontrol_project_projects} WHERE repo_id = %d", $repository->repo_id);
+  $project = versioncontrol_project_project_load($repository->repo_id);
+  if ($project) {
+    versioncontrol_project_set_project($project->nid, 0);  
+  }
 }
 
 
