@@ -42,8 +42,14 @@ function versioncontrol_project_nodeapi(&$node, $op, $a3 = NULL, $a4 = NULL) {
  * Load versioncontrol_project fields into project node object.
  */
 function versioncontrol_project_project_load(&$node) {
-  $additions = db_fetch_array(db_query('SELECT * FROM {versioncontrol_project_projects} WHERE nid = %d', $node->nid));
-  $node->versioncontrol_project = $additions;
+  $result = db_fetch_object(db_query('SELECT * FROM {versioncontrol_project_projects} WHERE nid = %d', $node->nid));
+  $fields = array('repo_id');
+    foreach ($fields as $field) {
+      $node->versioncontrol_project[$field] = $result->$field;
+    }
+  if ($result) {
+    $node->versioncontrol_project['repo'] = versioncontrol_project_repository_load($node->nid);
+  }
 }
 
 /**
@@ -75,4 +81,15 @@ function versioncontrol_project_set_project($project_id, $repo_id) {
     db_query("INSERT INTO {versioncontrol_project_projects} (nid, repo_id) VALUES (%d, %d)", $project_id, $repo_id);
   }
 }
+
+/**
+ * Load the repository object associated with a project.
+ */
+function versioncontrol_project_repository_load($project_id) {
+  $repo_id = db_result(db_query("SELECT repo_id FROM {versioncontrol_project_projects} WHERE nid = %d", $project_id));
+  $repository = versioncontrol_repository_load_multiple(array($repo_id));
+  return empty($repository) ? FALSE : reset($repository);
+}
+
+
 
