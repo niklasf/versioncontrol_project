@@ -91,5 +91,12 @@ function versioncontrol_project_repository_load($project_id) {
   return empty($repository) ? FALSE : reset($repository);
 }
 
+/**
+ * Implementation of hook_versioncontrol_entity_repository_delete().
+ */
+function versioncontrol_project_versioncontrol_entity_repository_delete($repository) {
+  // Delete mapping when repo is deleted.
+  db_query("DELETE FROM {versioncontrol_project_projects} WHERE repo_id = %d", $repository->repo_id);
+}
 
 
