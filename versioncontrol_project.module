@@ -116,4 +116,92 @@ function versioncontrol_project_versioncontrol_entity_repository_delete($reposit
   }
 }
 
+/**
+ * Implement hook_project_permission_info()
+ */
+function versioncontrol_project_project_permission_info($project = NULL) {
+  // Make sure that we have a valid repo associated with this project, and
+  // that it is using the auth plugin that we care about.
+  if (!is_null($project) && $repo = versioncontrol_project_repository_load($project->nid)) {
+    if (versioncontrol_project_verify_repo_auth_handler($repo)) {
+      return array(
+        'write to vcs' => array(
+          'title' => t('Write to VCS'),
+          'description' => t('Allows a user to commit or push to the repository associated with this project.'),
+        ),
+      );
+    }
+  }
+}
 
+/**
+ * Implement hook_project_maintainer_save()
+ */
+function versioncontrol_project_project_maintainer_save($nid, $uid, $permissions = array()) {
+  $repo = versioncontrol_project_repository_load($nid);
+  if ($repo && versioncontrol_project_verify_repo_auth_handler($repo)) {
+    $auth_handler = $repo->getAuthHandler();
+    $auth_data = $auth_handler->getUserData();
+    if (!isset($auth_data[$uid])) {
+      $auth_data[$uid] = array(
+        'branch_create' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'branch_update' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'branch_delete' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'tag_create' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'tag_update' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'tag_delete' => VersioncontrolAuthHandlerMappedAccounts::DENY,
+        'per-label' => array()
+      );
+    }
+    $auth_data[$uid]['access'] = ($permissions['write to vcs']) ? VersioncontrolAuthHandlerMappedAccounts::ALL : VersioncontrolAuthHandlerMappedAccounts::DENY;
+    $auth_handler->setUserData($uid, $auth_data[$uid]);
+    $auth_handler->save();
+  }
+}
+
+/**
+ * Implement hook_project_maintainer_remove()
+ */
+function versioncontrol_project_project_maintainer_remove($nid, $uid) {
+  $repo = versioncontrol_project_repository_load($nid);
+  if ($repo && versioncontrol_project_verify_repo_auth_handler($repo)) {
+    $auth_handler = $repo->getAuthHandler();
+    $auth_handler->deleteUserData($uid);
+    $auth_handler->save();
+  }
+}
+
+/**
+ * Implement hook_project_maintainer_project_load()
+ */
+function versioncontrol_project_project_maintainer_project_load($nid, &$maintainers) {
+  $repo = versioncontrol_project_repository_load($nid);
+  if ($repo && versioncontrol_project_verify_repo_auth_handler($repo)) {
+    $auth_data = $repo->getAuthHandler()->getUserData();
+    if (!empty($auth_data)) {
+      foreach ($auth_data as $account) {
+        if (empty($maintainers[$account['uid']])) {
+          $maintainers[$account['uid']]['name'] = db_result(db_query("SELECT name FROM {users} WHERE uid = %d", $account['uid']));
+        }
+        $maintainers[$account['uid']]['permissions']['write to vcs'] = ($account['access'] == VersioncontrolAuthHandlerMappedAccounts::ALL) ? 1 : 0;
+      }
+    }
+  }
+}
+
+/**
+ * Verify that a repo that is using a specific auth plugin.
+ *
+ * @param $repo
+ *   A fully loaded repo
+ *
+ * @param $plugin
+ *   (optional) The name of the plugin to check against. Defaults to 'account'
+ *
+ * @return bool
+ *   TRUE is the auth_handler plugin matches the requested plugin, else FALSE. 
+ */
+function versioncontrol_project_verify_repo_auth_handler($repo, $plugin = NULL) {
+  $plugin = is_null($plugin) ? 'account' : $plugin;
+  return $repo && $repo->plugins['auth_handler'] == $plugin;
+}
