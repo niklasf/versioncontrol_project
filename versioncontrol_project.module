@@ -205,3 +205,13 @@ function versioncontrol_project_verify_repo_auth_handler($repo, $plugin = NULL) 
   $plugin = is_null($plugin) ? 'account' : $plugin;
   return $repo && $repo->plugins['auth_handler'] == $plugin;
 }
+
+/**
+ * Implementation of hook_views_api().
+ */
+function versioncontrol_project_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'versioncontrol_project') .'/views',
+  );
+}
