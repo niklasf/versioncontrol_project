@@ -35,6 +35,25 @@ function versioncontrol_project_schema() {
     ),
     'primary key' => array('nid'),
   );
+  $schema['versioncontrol_project_maintainers_block_cache'] = array(
+    'description' => t('Cache for Versioncontrol-specific blocks that cannot rely on the normal block cache.'),
+    'fields' => array(
+      'cid' => array(
+        'description' => 'Primary Key: Unique cache ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'description' => 'A collection of data to cache.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('cid'),
+  );
 
   return $schema;
 }

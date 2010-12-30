@@ -16,7 +16,48 @@
 function versioncontrol_project_menu() {
   $items = array();
 
+  $items['node/%project_node/committers'] = array(
+    'title' => 'Committers',
+    'page callback' => 'versioncontrol_project_committers_page',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
   return $items;
+}
+
+/**
+ * Implementation of hook_block().
+ */
+function versioncontrol_project_block($op = 'list', $delta = 0, $edit = array()) {
+  switch ($op) {
+    case 'list':
+      return array(
+        'project_maintainers' => array(
+          'info' => t('Version Control Project: Project maintainers'),
+          'cache' => BLOCK_NO_CACHE,
+        ),
+      );
+    case 'configure':
+      return versioncontrol_project_block_configure($delta);
+    case 'save':
+      return versioncontrol_project_block_save($delta, $edit);
+    case 'view':
+      return versioncontrol_project_block_view($delta);
+  }
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function versioncontrol_project_theme() {
+  return array(
+    'versioncontrol_project_maintainer_list' => array(
+      'arguments' => array('node', 'maintainers'),
+    ),
+  );
 }
 
 /**
@@ -156,6 +197,9 @@ function versioncontrol_project_project_maintainer_save($nid, $uid, $permissions
     $auth_data[$uid]['access'] = ($permissions['write to vcs']) ? VersioncontrolAuthHandlerMappedAccounts::ALL : VersioncontrolAuthHandlerMappedAccounts::DENY;
     $auth_handler->setUserData($uid, $auth_data[$uid]);
     $auth_handler->save();
+    // Clear cache for the maintainers block
+    $cid = 'project_maintainers:'. $nid;
+    _versioncontrol_project_block_cache_set($cid, NULL);
   }
 }
 
@@ -168,6 +212,9 @@ function versioncontrol_project_project_maintainer_remove($nid, $uid) {
     $auth_handler = $repo->getAuthHandler();
     $auth_handler->deleteUserData($uid);
     $auth_handler->save();
+    // Clear cache for the maintainers block
+    $cid = 'project_maintainers:'. $nid;
+    _versioncontrol_project_block_cache_set($cid, NULL);
   }
 }
 
@@ -214,4 +261,199 @@ function versioncontrol_project_views_api() {
     'api' => 2,
     'path' => drupal_get_path('module', 'versioncontrol_project') .'/views',
   );
+}
+
+/**
+ * Return a list of users who committed to the specified project.
+ *
+ * @param $nid
+ *   Project node ID to get committers for.
+ * @param $sort
+ *   Optional ORDER BY clause to use for the list of committers. Defaults to
+ *   sorting by the most recent commit.
+ * @param $only_maintainers
+ *   Optional boolean to indicate if the list should only include users that
+ *   currently have VCS write access to the project. Defaults to TRUE.
+ *
+ * @return
+ *   Array containing objects of committer information, keyed by uid.
+ */
+function versioncontrol_project_get_project_committers($nid, $order = '', $only_maintainers = TRUE) {
+  if (empty($order)) {
+    $order = ' ORDER BY last_commit DESC';
+  }
+  $repo = versioncontrol_project_repository_load($nid);
+  $query = "SELECT o.author_uid as uid, MIN(o.date) AS first_commit, MAX(o.date) AS last_commit, COUNT(o.vc_op_id) AS commits, u.name FROM {versioncontrol_operations} o INNER JOIN {users} u ON o.author_uid = u.uid WHERE o.repo_id = %d AND o.author_uid != 0 GROUP BY o.repo_id, o.author_uid $order";
+  $result = db_query($query, $repo->repo_id);
+  $committers = array();
+  while ($committer = db_fetch_object($result)) {
+    $committers[$committer->uid] = $committer;
+  }
+  if ($only_maintainers) {
+    return array_intersect_key($committers, versioncontrol_project_get_project_maintainers($repo->repo_id));
+  }
+  return $committers;
+}
+
+/**
+ * Page callback to display all committers for a given project.
+ */
+function versioncontrol_project_committers_page($project) {
+  drupal_set_title(t('Committers for %name', array('%name' => $project->title)));
+  $time = time();
+  project_project_set_breadcrumb($project, TRUE);
+  $header = array(
+    array('data' => t('User'), 'field' => 'u.name'),
+    array('data' => t('Last commit'), 'field' => 'last_commit', 'sort' => 'desc'),
+    array('data' => t('First commit'), 'field' => 'first_commit'),
+    array('data' => t('Commits'), 'field' => 'commits'),
+  );
+  // Use FALSE for the 3rd argument to get all committers, not just the users
+  // that currently have commit access.
+  $committers = versioncontrol_project_get_project_committers($project->nid, tablesort_sql($header), FALSE);
+  $rows = array();
+  foreach ($committers as $committer) {
+    $rows[] = array(
+      theme('username', $committer),
+      t('!time ago', array('!time' => format_interval($time - $committer->last_commit, 1))),
+      t('!time ago', array('!time' => format_interval($time - $committer->first_commit, 1))),
+      format_plural($committer->commits, '1 commit', '@count commits')
+    );
+  }
+  return theme('table', $header, $rows);
+}
+
+/**
+ * Implementation of hook_block() for the 'configure' operation.
+ */
+function versioncontrol_project_block_configure($delta) {
+  $form = array();
+  switch ($delta) {
+    case 'project_maintainers':
+      for ($i=1; $i<=10; $i++) {
+        $options[$i] = $i;
+      }
+      $options['all'] = t('All committers');
+      $form['versioncontrol_project_maintainers_block_length'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+        '#title' => t('Number of maintainers to display'),
+        '#default_value' => variable_get('versioncontrol_project_maintainers_block_length', 5),
+      );
+      break;
+  }
+  return $form;
+}
+
+/**
+ * Implementation of hook_block() for the 'save' operation.
+ */
+function versioncontrol_project_block_save($delta, $edit) {
+  switch ($delta) {
+    case 'project_maintainers':
+      variable_set('versioncontrol_project_maintainers_block_length', $edit['versioncontrol_project_maintainers_block_length']);
+      break;
+  }
+}
+
+/**
+ * Implementation of hook_block() for the 'view' operation.
+ */
+function versioncontrol_project_block_view($delta) {
+  $block = array();
+  switch ($delta) {
+    case 'project_maintainers':
+      if (($node = project_get_project_from_menu()) && !empty($node->versioncontrol_project['repo_id']) && node_access('view', $node)) {
+        $cid = 'project_maintainers:'. $node->nid;
+        $maintainers = _versioncontrol_project_block_cache_get($cid);
+        if (empty($maintainers)) {
+          $maintainers = versioncontrol_project_get_project_committers($node->nid);
+          _versioncontrol_project_block_cache_set($cid, $maintainers);
+        }
+        $block = array(
+          'subject' => t('Maintainers for @project', array('@project' => $node->title)),
+          'content' => theme('versioncontrol_project_maintainer_list', $node, $maintainers, variable_get('versioncontrol_project_maintainers_block_length', 5)),
+        );
+      }
+      break;
+  }
+  return $block;
+}
+
+function _versioncontrol_project_block_cache_get($cid) {
+  $data = db_result(db_query("SELECT data FROM {versioncontrol_project_maintainers_block_cache} WHERE cid = '%s'", $cid));
+  if (!empty($data)) {
+    return unserialize($data);
+  }
+}
+
+function _versioncontrol_project_block_cache_set($cid, $data) {
+  if (empty($data)) {
+    db_query("DELETE FROM {versioncontrol_project_maintainers_block_cache} WHERE cid = '%s'", $cid);
+  }
+  else {
+    $serialized = serialize($data);
+    db_query("UPDATE {versioncontrol_project_maintainers_block_cache} SET data = '%s' WHERE cid = '%s'", $serialized, $cid);
+    if (!db_affected_rows()) {
+      db_query("INSERT INTO {versioncontrol_project_maintainers_block_cache} (cid, data) VALUES ('%s', '%s')", $cid, $serialized);
+    }
+  }
+}
+
+/**
+ * Return themed HTML for the Versioncontrol project maintainers block.
+ */
+function theme_versioncontrol_project_maintainer_list($node, $maintainers, $max_maintainers = NULL) {
+  $i = 0;
+  $time = time();
+  $items = array();
+  foreach ($maintainers as $maintainer) {
+    if (isset($max_maintainers) && is_numeric($max_maintainers) && $i >= $max_maintainers) {
+      break;
+    }
+    $item = '<li><div class="vc-user">';
+    $item .= theme('username', $maintainer) .' - ';
+    $item .= '<span class="vc-commits">'. format_plural($maintainer->commits, '1 commit', '@count commits') .'</span></div>';
+    $item .= '<div class="vc-commit-times">';
+    $item .= t('last: !last_time ago, first: !first_time ago', array('!last_time' => format_interval($time - $maintainer->last_commit, 1), '!first_time' => format_interval($time - $maintainer->first_commit, 1)));
+    $item .= '</div>';
+    $item .= '</li>';
+    $i++;
+    $items[] = $item;
+  }
+  $output = theme('item_list', $items);
+  $output .= l('View all committers', 'node/'. $node->nid .'/committers');
+  return $output;
+}
+
+/**
+ * Return a list of all maintainers with VCS write access to the repo.
+ *
+ * @return array
+ *   An array of users keyed by uid.
+ */
+function versioncontrol_project_get_project_maintainers($repo_id) {
+  $maintainers = array();
+  $repo = versioncontrol_repository_load(array($repo_id));
+  if (versioncontrol_project_verify_repo_auth_handler($repo)) {
+    $auth_data = $repo->getAuthHandler()->getUserData();
+    foreach ($auth_data as $maintainer) {
+      if ($maintainer['access'] == VersioncontrolAuthHandlerMappedAccounts::ALL) {
+        $maintainers[$maintainer['uid']] = $maintainer;
+      }
+    }
+  }
+  return $maintainers;
+}
+
+/**
+ * Implementation of hook_versioncontrol_entity_commit_insert().
+ */
+function versioncontrol_project_versioncontrol_entity_commit_insert($operation) {
+  if (isset($operation->repo_id)) {
+    // invalidate block cache for maintainers block
+    $project = versioncontrol_project_project_load($operation->repo_id);
+    $cid = 'project_maintainers:'. $project->nid;
+    _versioncontrol_project_block_cache_set($cid, NULL);
+  }
 }
