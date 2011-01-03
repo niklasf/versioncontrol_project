@@ -94,7 +94,7 @@ function versioncontrol_project_project_nodeapi_load(&$node) {
 }
 
 /**
- * Save versioncontrol_project information when a new project is created. 
+ * Save versioncontrol_project information when a new project is created.
  */
 function versioncontrol_project_project_nodeapi_insert(&$node) {
   db_query("INSERT INTO {versioncontrol_project_projects} (nid, repo_id) VALUES (%d, %d)", $node->nid, 0);
@@ -153,7 +153,7 @@ function versioncontrol_project_versioncontrol_entity_repository_delete($reposit
   // Delete mapping when repo is deleted.
   $project = versioncontrol_project_project_load($repository->repo_id);
   if ($project) {
-    versioncontrol_project_set_project($project->nid, 0);  
+    versioncontrol_project_set_project($project->nid, 0);
   }
 }
 
@@ -246,7 +246,7 @@ function versioncontrol_project_project_maintainer_project_load($nid, &$maintain
  *   (optional) The name of the plugin to check against. Defaults to 'account'
  *
  * @return bool
- *   TRUE is the auth_handler plugin matches the requested plugin, else FALSE. 
+ *   TRUE is the auth_handler plugin matches the requested plugin, else FALSE.
  */
 function versioncontrol_project_verify_repo_auth_handler($repo, $plugin = NULL) {
   $plugin = is_null($plugin) ? 'account' : $plugin;
