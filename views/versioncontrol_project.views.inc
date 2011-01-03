@@ -24,6 +24,10 @@ function versioncontrol_project_views_data() {
       'left_field' => 'repo_id',
       'field' => 'repo_id',
     ),
+    'versioncontrol_item_revisions' => array(
+      'left_field' => 'repo_id',
+      'field' => 'repo_id',
+    ),
   );
   return $data;
 }
@@ -38,6 +42,11 @@ function versioncontrol_project_views_data_alter(&$data) {
     'field' => 'repo_id',
   );
   $data['node']['table']['join']['versioncontrol_operations'] = array(
+    'left_field' => 'nid',
+    'left_table' => 'versioncontrol_project_projects',
+    'field' => 'nid',
+  );
+  $data['node']['table']['join']['versioncontrol_item_revisions'] = array(
     'left_field' => 'nid',
     'left_table' => 'versioncontrol_project_projects',
     'field' => 'nid',
