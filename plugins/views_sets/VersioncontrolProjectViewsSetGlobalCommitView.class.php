@@ -3,5 +3,5 @@
 class VersioncontrolProjectViewsSetGlobalCommitView extends VersioncontrolViewsSetGlobalBase {
   protected $setName = 'project_global_commit_view';
 
-  protected $baseView = 'commitlog_global_commits';
+  protected $baseView = 'vc_project_global_commits';
 }
