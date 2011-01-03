@@ -28,6 +28,12 @@ function versioncontrol_project_menu() {
   return $items;
 }
 
+function versioncontrol_project_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'versioncontrol') {
+    return "plugins/$plugin";
+  }
+}
+
 /**
  * Implementation of hook_block().
  */
