@@ -1,6 +1,8 @@
 <?php
 
-
+/**
+ * Implementation of hook_views_default_views().
+ */
 function versioncontrol_project_views_default_views() {
   $views = array();
 
@@ -1360,4 +1362,6 @@ function versioncontrol_project_views_default_views() {
   ));
 
   $views[$view->name] = $view;
+
+  return $views;
 }
