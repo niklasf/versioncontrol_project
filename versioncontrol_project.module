@@ -256,7 +256,7 @@ function versioncontrol_project_project_maintainer_project_load($nid, &$maintain
  */
 function versioncontrol_project_verify_repo_auth_handler($repo, $plugin = NULL) {
   $plugin = is_null($plugin) ? 'account' : $plugin;
-  return $repo && $repo->plugins['auth_handler'] == $plugin;
+  return $repo && isset($repo->plugins['auth_handler']) && $repo->plugins['auth_handler'] == $plugin;
 }
 
 /**
