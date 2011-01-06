@@ -427,44 +427,7 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
   $version = versioncontrol_release_get_version_from_label($label, $project_node);
 
   if (empty($version)) {
-    // This is for labels that cannot automatically be assigned a
-    // version object (and in turn, a version string). This includes default
-    // branches like HEAD or master, as well as labels which have been left
-    // without a fixed version by the site operators.
-    $version = array();
-
-    foreach ($fields as $field) {
-      if (isset($form_state['storage']['project_release'][$field])) {
-        $form_val = $form_state['storage']['project_release'][$field];
-        if ($form_val !== '' && (is_numeric($form_val) || $form_val == 'x')) {
-          $version[$field] = $form_val;
-        }
-      }
-    }
-    if (isset($form_state['storage']['project_release']['version_extra'])
-        && $form_state['storage']['project_release']['version_extra'] !== '') {
-      $version['version_extra'] = $form_state['storage']['project_release']['version_extra'];
-    }
-
-    if (isset($form_state['storage']['project_release']['version_api_tid'])) {
-      $version_api_term_id = $form_state['storage']['project_release']['version_api_tid'];
-
-      if (is_numeric($version_api_term_id) && !empty($version_api_term_id)
-          && db_result(db_query('SELECT COUNT(*) FROM {term_data} WHERE tid = %d AND vid = %d',
-                                $version_api_term_id, $vocab_id))) {
-        $version['version_api_tid'] = $version_api_term_id;
-      }
-    }
-
-    // If we could retrieve a version, great. Otherwise, keep stuff as is.
-    if (!empty($version)) {
-      $version = (object) $version;
-
-      if (function_exists('versioncontrol_project_local_version_is_valid')
-          && !versioncontrol_project_local_version_is_valid($version, $label, $project_node)) {
-        $version = FALSE;
-      }
-    }
+    // TODO: Gracefully handle this error.
   }
 
   if (!empty($version)) {
@@ -706,110 +669,21 @@ function versioncontrol_release_delete_release_label($release_nid) {
  */
 function versioncontrol_release_project_release_form_alter_edit(&$form, &$form_state, $release_node, $release_label) {
   $project_node = node_load($release_node->project_release['pid']);
-  $labels = array();
 
-  // Always include the current tag as an option, unless the tag is empty.
-  if (!empty($release_node->project_release['tag'])) {
-    $tags[$release_node->project_release['tag']] = $release_node->project_release['tag'];
-  }
-
-  // See if any other tags should be presented as options. If the user
-  // has 'administer projects' permission, present all tags that don't
-  // yet have a release node pointing to them. If it's a HEAD release
-  // node, see if another tag exists which has the same version info
-  // but isn't associated with a release.
-  $allow_branch_switch = FALSE;
-
-  if (user_access('administer projects')) {
-    $allow_branch_switch = TRUE;
-  }
-  if (!$allow_branch_switch && $release_label['type'] == VERSIONCONTROL_OPERATION_BRANCH) {
-    $version_from_label = versioncontrol_release_get_version_from_label($release_label, $project_node);
-    $allow_branch_switch = empty($version_from_label);
-  }
-
-  if ($allow_branch_switch) {
-    $fields = array('version_major', 'version_minor', 'version_patch', 'version_extra');
-    $possible_labels = versioncontrol_release_get_possible_labels($project_node);
-    $possible_labels[$release_label['label_id']] = $release_label;
-
-    if (!user_access('administer projects')) {
-      // A non-admin editing a HEAD node. Search for another tag (if
-      // any) that matches the current version info for this release.
-      $current_version = $release_node->project_release; // contains all version parts
-
-      foreach ($possible_labels as $label_id => $label) {
-        if ($label_id == $release_label['label_id']) {
-          continue;
-        }
-        $version_from_label = versioncontrol_release_get_version_from_label($label, $project_node);
-
-        // Don't make it possible to switch to labels like HEAD.
-        if (empty($version_from_label)) {
-          unset($possible_labels[$label_id]);
-          continue;
-        }
-
-        // Don't make it possible to switch to labels with different versions.
-        foreach ($fields as $field) {
-          if ($version_from_label->$field != $current_version[$field]) {
-            unset($possible_labels[$label_id]);
-            break;
-          }
-        }
-      }
-    }
-
-    $release_label_category = ($release_label['type'] == VERSIONCONTROL_OPERATION_TAG)
-      ? t('Current tag') : t('Current branch');
-
-    $label_options = array($release_label_category => array());
-    $branches_t = t('Possible branches');
-
-    foreach ($possible_labels as $label_id => $label) {
-      if ($label['type'] != VERSIONCONTROL_OPERATION_BRANCH && $label_id != $release_label['label_id']) {
-        continue; // Don't allow to switch to tags.
-      }
-      $category = ($label_id == $release_label['label_id'])
-        ? $release_label_category : $branches_t;
-
-      $version = versioncontrol_release_get_version_from_label($label, $project_node);
-      $label_caption = versioncontrol_release_get_label_caption($label, $version, $project_node);
-      $label_options[$category][$label_id] = $label_caption;
-    }
-
-    // Make sure the current label is selectable and listed at the top.
-    if (isset($label_options[$release_label['label_id']])) {
-      unset($label_options[$release_label['label_id']]);
-    }
-  }
-
-  // Add a label selector if switching labels for the release is allowed.
-  if (!empty($label_options)) {
-    $form['versioncontrol_release'] = array(
-      '#type' => 'markup',
-      '#value' => '',
-      '#weight' => -4,
-    );
-    $form['versioncontrol_release']['versioncontrol_release_label_id'] = array(
-      '#type' => 'select',
-      '#title' => t('Switch to different branch'),
-      '#options' => $label_options,
-      '#default_value' => $release_label['label_id'],
-      '#required' => TRUE,
-    );
-  }
   unset($form['tag']);
 
+  // TODO: Hide API compatibility taxonomy selector.
   // Don't show the fieldset to enter the version number parts.
-  $form['project_release']['#access'] = FALSE;
-  $form['rel_id']['#access'] = FALSE; // rel_id is for "release identification"
+  if (!user_access('administer projects')) {
+    $form['project_release']['#access'] = FALSE;
+    $form['rel_id']['#access'] = FALSE; // rel_id is for "release identification"
+  }
 
-  $file = db_fetch_object(db_query("SELECT filepath FROM {files} f INNER JOIN {project_release_file} prf ON f.fid = prf.fid WHERE prf.nid = %d", $release_node->nid));
   // Make sure the file upload UI is gone if this project has a repository set
   // because in that case users should *never* have a way to upload files.
   // Otherwise, if no repository is set for this project, keep the upload UI.
   if (versioncontrol_project_node_uses_versioncontrol($project_node)) {
+    $file = db_fetch_object(db_query("SELECT filepath FROM {files} f INNER JOIN {project_release_file} prf ON f.fid = prf.fid WHERE prf.nid = %d", $release_node->nid));
     if (!$file || empty($file->filepath)) {
       unset($form['project_release_files']);
     }
