@@ -64,79 +64,91 @@ function versioncontrol_release_admin_form(&$form_state) {
   return system_settings_form($form);
 }
 
+/**
+ * Implement hook_ctools_plugin_directory().
+ */
+function versioncontrol_release_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'versioncontrol_release' && $plugin == 'label_version_mapper') {
+    return "plugins/$plugin";
+  }
+}
 
 /**
- * Return an object of version number values based on the given VCS label,
- * or FALSE if no version object can be constructed.
+ * Instantiate an object to map VCAPI labels into release node version objects.
  *
- * If there is a local, site-specific implementation, use that.  Otherwise,
- * the tag is inserted directly into the "extra" field in the version object.
+ * This function looks in the project's VCAPI repository object for the
+ * 'plugins' array and finds the desired CTools plugin for the label/version
+ * mapping. It then loads the plugin and instantiates a mapper object. If
+ * anything goes wrong, we return FALSE.
+ *
+ * @param $project_node
+ *   The fully loaded node object for the project we're doing the mapping for.
+ *
+ * @return object
+ *   The specific elements of the version that a given VCAPI label maps to.
+ *   Can use any of the following fields: 'version_major', 'version_minor',
+ *   'verion_patch', 'version_extra', or 'version_api_tid'.
+ *
+ * @see project_release_get_version()
+ * @see VersioncontrolReleaseLabelVersionMapperInterface
  */
-function versioncontrol_release_get_version_from_label($label, $project_node) {
-  if (function_exists('versioncontrol_release_local_get_version_from_label')) {
-    return versioncontrol_release_local_get_version_from_label($label, $project_node);
-  }
-  // Try to provide a sensible default behavior by extracting number parts
-  // from the label name and using any non-numeric suffix as version extra.
-  $fields = array('version_major', 'version_minor', 'version_patch');
-  $version = array();
+function versioncontrol_release_get_label_version_mapper($project_node) {
+  ctools_include('plugins');
 
-  $matched = preg_match_all('/[^\.\-]+/', $label['name'], $matches, PREG_OFFSET_CAPTURE);
-  $label_parts = $matched ? $matches[0] : array();
-
-  while (!empty($fields)) { // Try to fill all regular version fields.
-    $current_field = array_shift($fields);
-
-    while (!empty($label_parts)) {
-      $label_part = array_shift($label_parts);
-
-      if (is_numeric($label_part[0])) {
-        $version[$current_field] = $label_part[0];
-        break; // next version field
-      }
-      elseif (!empty($version)) {
-        // Non-numeric field after a numeric one was already assigned:
-        // that sounds like a suffix like "beta1" or similar. Put back the
-        // current label part so that it can still be extracted afterwards,
-        // and fill up the regular fields in order to exit both loops.
-        array_unshift($label_parts, $label_part);
-        while (!empty($fields)) {
-          $remaining_field = array_shift($fields);
-          $version[$remaining_field] = FALSE;
-        }
-        break;
+  if (!empty($project_node->versioncontrol_project['repo'])) {
+    $repo = $project_node->versioncontrol_project['repo'];
+    if (!empty($repo->plugins['versioncontrol_release_label_version_mapper'])) {
+      if ($class = ctools_plugin_load_class('versioncontrol_release', 'label_version_mapper', $repo->plugins['versioncontrol_release_label_version_mapper'], 'mapper')) {
+        $mapper = new $class();
+        return $mapper;
       }
     }
   }
+  return FALSE;
+}
 
-  // Remove any fields padded with FALSE.
-  $positive_version_numbers = FALSE;
-  foreach ($version as $field => $number) {
-    if ($number === FALSE) {
-      unset($version[$field]);
-    }
-    elseif ($number > 0) {
-      $positive_version_numbers = TRUE;
-    }
-  }
+/**
+ * Map a VCAPI tag into an object of version information.
+ *
+ * @param VersioncontrolTag $tag
+ *   An object representing a version control tag.
+ * @param $project_node
+ *   The fully loaded node object for the project we're doing the mapping for.
+ *
+ * @return object
+ *   The specific elements of the version that a given VCAPI label maps to.
+ *   Can use any of the following fields: 'version_major', 'version_minor',
+ *   'verion_patch', 'version_extra', or 'version_api_tid'.
+ *
+ * @see project_release_get_version()
+ * @see versioncontrol_release_get_label_version_mapper()
+ * @see VersioncontrolReleaseLabelVersionMapperInterface
+ */
+function versioncontrol_release_get_version_from_tag($tag, $project_node) {
+  $mapper = versioncontrol_release_get_label_version_mapper();
+  return $mapper->GetVersionFromTag($tag, $project_node);
+}
 
-  if (!empty($positive_version_numbers)) {
-    if ($label['type'] == VERSIONCONTROL_OPERATION_BRANCH) {
-      // Branches always get a "-dev" appended. Looks good, and helps with
-      // reverse engineering the version number.
-      $version['version_extra'] = 'dev';
-    }
-    elseif (!empty($label_parts)) {
-      // The next label part is the one after the last numeric part, like "beta1".
-      // From that position on, use the rest of $label['name'] as version extra.
-      $label_part = array_shift($label_parts);
-      $version['version_extra'] = substr($label['name'], $label_part[1]);
-    }
-    return (object) $version;
-  }
-  else {
-    return empty($version) ? FALSE : ((object) $version);
-  }
+/**
+ * Map a VCAPI branch into an object of version information.
+ *
+ * @param VersioncontrolBranch $branch
+ *   An object representing a version control branch.
+ * @param $project_node
+ *   The fully loaded node object for the project we're doing the mapping for.
+ *
+ * @return object
+ *   The specific elements of the version that a given VCAPI label maps to.
+ *   Can use any of the following fields: 'version_major', 'version_minor',
+ *   'verion_patch', 'version_extra', or 'version_api_tid'.
+ *
+ * @see project_release_get_version()
+ * @see versioncontrol_release_get_label_version_mapper()
+ * @see VersioncontrolReleaseLabelVersionMapperInterface
+ */
+function versioncontrol_release_get_version_from_branch($branch, $project_node) {
+  $mapper = versioncontrol_release_get_label_version_mapper();
+  return $mapper->GetVersionFromBranch($branch, $project_node);
 }
 
 /**
@@ -211,7 +223,6 @@ function versioncontrol_release_get_label_caption($label, $version, $project_nod
     ));
   }
 }
-
 
 /**
  * Implementation of hook_form_alter().

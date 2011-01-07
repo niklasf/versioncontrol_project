@@ -1,7 +1,10 @@
 ; $Id$
-name = "Version Control / Release Node integration"
+name = "Version Control / Release node integration"
 description = "Integrates release nodes (provided by the 'Project releases' module) with version control systems supported by the Version Control API."
+package = Version Control
 dependencies[] = versioncontrol_project
 dependencies[] = project_release
-package = Version Control
+dependencies[] = autoload
+dependencies[] = ctools
+files[] = includes/interfaces.inc
 core = 6.x
