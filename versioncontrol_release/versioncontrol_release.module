@@ -187,7 +187,7 @@ function versioncontrol_release_get_possible_labels($project_node) {
 
   $repo = $project_node->versioncontrol_project['repo'];
 
-  $tags = $repo->loadTags(array(), array(), array('callback' => 'versioncontrol_release_load_labels'));
+  $tags = $repo->loadTags(array(), array(), array('callback' => 'versioncontrol_release_load_labels_query_alter'));
   if (!empty($tags)) {
     foreach ($tags as $tag) {
       $version = versioncontrol_release_get_version_from_tag($tag->name, $project_node);
@@ -198,7 +198,7 @@ function versioncontrol_release_get_possible_labels($project_node) {
     }
   }
 
-  $branches = $repo->loadBranches(array(), array(), array('callback' => 'versioncontrol_release_load_labels'));
+  $branches = $repo->loadBranches(array(), array(), array('callback' => 'versioncontrol_release_load_labels_query_alter'));
   if (!empty($branches)) {
     foreach ($branches as $branch) {
       $version = versioncontrol_release_get_version_from_branch($branch->name, $project_node);
@@ -240,9 +240,17 @@ function versioncontrol_project_get_label_caption($label_name, $version, $projec
   return $label_text;
 }
 
-function versioncontrol_release_load_labels(&$query, $ids, $conditions, $options) {
-  // TODO: Add a JOIN on {versioncontrol_release_labels} to filter out labels
-  // that already have release nodes associated with them.
+/**
+ * Callback function to alter the query when loading VCAPI labels.
+ *
+ * When we're generating the list of available labels for the release node
+ * form, we need to filter out any labels that already have a release node
+ * associated with them.  So we LEFT JOIN on {versioncontrol_release_labels}
+ * and ensure that the label_id is NULL in from that table.
+ */
+function versioncontrol_release_load_labels_query_alter(&$query, $ids, $conditions, $options) {
+  $query->leftjoin('versioncontrol_release_labels', 'vcrl', 'base.label_id = vcrl.label_id');
+  $query->isNull('vcrl.label_id');
 }
 
 /**
@@ -269,8 +277,9 @@ function versioncontrol_release_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Implementation of hook_form_alter() for the "add" version of the
- * release node form.
+ * Alter the form for adding a project_release node.
+ *
+ * @see versioncontrol_release_form_alter()
  */
 function versioncontrol_release_project_release_form_alter_add(&$form, &$form_state) {
   $project_node = $form['project']['#value'];
@@ -298,12 +307,6 @@ function versioncontrol_release_project_release_form_alter_add(&$form, &$form_st
         WHERE label_id = %d', $label_id
     ));
   }
-  // cvs.module fetches the tag from project_release as follows.
-  // Imho, label information should not be stored in project_release's tables,
-  // so versioncontrol_release refrains from accessing that information.
-  //elseif (isset($form_state['values']['project_release']['tag'])) {
-  //  $label_name = $form_state['values']['project_release']['tag'];
-  //}
 
   if (empty($label)) {
     // Page #1: No release tag or branch has been selected yet.
@@ -318,10 +321,10 @@ function versioncontrol_release_project_release_form_alter_add(&$form, &$form_st
   }
 }
 
-
 /**
- * Implementation of hook_form_alter() for the "add" version of the
- * release node form as long as no release tag or branch has been selected.
+ * Alter the release node add form: page #1 to select a branch or tag.
+ *
+ * @see versioncontrol_release_project_release_form_alter_add()
  */
 function versioncontrol_release_project_release_form_alter_add_select_label(&$form, &$form_state, $project_node) {
   // Rip out everything else that might be in this form.
@@ -361,9 +364,9 @@ function versioncontrol_release_project_release_form_alter_add_select_label(&$fo
 }
 
 /**
- * Helper function to unset all the elements in the release node form
- * that we don't want if we're on one of the preliminary pages to get
- * the tag and/or version info before we present the final form.
+ * Unset all the elements on the release node form.
+ *
+ * Used when altering the release node form into a multi-step form.
  */
 function _versioncontrol_release_project_release_form_alter_unset_all(&$form, $whitelist = array()) {
   foreach (element_children($form) as $child) {
@@ -411,10 +414,10 @@ function versioncontrol_release_form_next_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 }
 
-
 /**
- * Implementation of hook_form_alter() for the "add" version of the
- * release node form once the release tag or branch has been selected.
+ * Alter the release node add form: page #2 once the branch/tag is known.
+ *
+ * @see versioncontrol_release_project_release_form_alter_add()
  */
 function versioncontrol_release_project_release_form_alter_add_node_form(&$form, &$form_state, $project_node, $label) {
   $fields = array('version_major', 'version_minor', 'version_patch');
@@ -423,17 +426,17 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
   $label_type_string = ($label['type'] == VERSIONCONTROL_OPERATION_TAG)
     ? t('tag') : t('branch');
 
+  $form['project_release']['rebuild'] = array(
+    '#type' => 'value',
+    '#value' => $label['type'] == VERSIONCONTROL_OPERATION_BRANCH,
+  );
+
   $in_use = db_result(db_query("SELECT label_id FROM {versioncontrol_release_labels} WHERE project_nid = %d AND label_id = %d", $project_node->nid, $label['label_id']));
   if ($in_use) {
     form_set_error('tag', t('The !labeltype you have selected is already in use by another release.', array('!labeltype' => $label_type_string)));
   }
 
-  $version = versioncontrol_release_get_version_from_tag($label['name'], $label['type'], $project_node);
-
-  if (empty($version)) {
-    // TODO: Gracefully handle this error.
-  }
-
+  $version = versioncontrol_release_get_version_from_label($label['name'], $label['type'], $project_node);
   if (!empty($version)) {
     $version_string = project_release_get_version($version, $project_node);
 
@@ -443,16 +446,18 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
       (array) $version, array('version' => $version_string)
     );
   }
-
-  unset($form['tag']); // jpetso: why? what does it do otherwise? please explain.
-
-  $label_options[$label['label_id']] = $label['name'];
+  else {
+    // We should never get here, since we already filter out labels that don't
+    // produce valid version objects on the first page of the form.
+  }
 
   $form['versioncontrol_release'] = array(
     '#type' => 'markup',
     '#value' => '',
     '#weight' => -4,
   );
+  // Force the label that was already selected.
+  $label_options[$label['label_id']] = $label['name'];
   $form['versioncontrol_release']['versioncontrol_release_label_id'] = array(
     '#type' => 'select',
     '#title' => t('Repository !labeltype', array('!labeltype' => $label_type_string)),
@@ -469,7 +474,7 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
     $form['versioncontrol_release']['#title'] =  t('Release identification');
     $form['versioncontrol_release']['#prefix'] = '<div class="version-elements">';
     $form['versioncontrol_release']['#suffix'] = '</div>';
-    $form['versioncontrol_release']['#description'] = t('Now that the !labeltype has been selected, these can not be modified.', array('!labeltype' => $label_type_string));
+    $form['versioncontrol_release']['#description'] = t('Now that the !labeltype has been selected, these can not be modified unless you <a href="@url">go back to the previous page</a>.', array('!labeltype' => $label_type_string, '@url' => url('node/add/project-release/' . $project_node->nid)));
 
     // Display the version string so the user knows we've got it right.
     $form['versioncontrol_release']['version'] = array(
@@ -510,9 +515,8 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
       }
     }
 
+    // This hides the (now empty) "Version number elements" fieldset.
     $form['project_release']['#access'] = FALSE;
-    $form['rel_id']['#access'] = FALSE; // rel_id is for "release identification"
-    //$form['#pre_render'][] = 'versioncontrol_project_release_form_pre_render';
 
     // For the actual submit button, add a handler to clear out
     // $form_state['storage'] entirely so that we actually submit the form.
@@ -529,8 +533,10 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
 }
 
 /**
- * Validation handler for the release node "add" form after a label has
- * been selected: Set the title according to the version string.
+ * Validation handler for 2nd page of the release node add form.
+ *
+ * By saving the version string into $form_state, the release node will
+ * have the right title according to the version string once saved.
  */
 function versioncontrol_release_form_add_validate($form, &$form_state) {
   $form_state['values']['project_release'] = array_merge(
@@ -554,6 +560,7 @@ function versioncontrol_release_form_add_final_submit($form, &$form_state) {
 
 /**
  * Implementation of hook_nodeapi():
+ *
  * Load the release label info into $node->versioncontrol_release if there is
  * a release for this node, and update/delete the release label when the node
  * is being deleted.
@@ -627,26 +634,39 @@ function versioncontrol_release_nodeapi(&$node, $op, $arg = NULL) {
 }
 
 /**
- * Return a Version Control API label array for a given @p $release_nid
- * if one is associated to that node, or FALSE if none is.
+ * Fetch an array describing the VCAPI label associated with a release.
+ *
+ * @param integer $release_nid
+ *   The node ID of the release to retrieve label data for.
+ *
+ * @return
+ *   An array of values describing the VCAPI label associated with a release,
+ *   or FALSE if there's no label.
  */
 function versioncontrol_release_get_release_label($release_nid) {
-  $result = db_query('SELECT label.label_id, label.name, label.type
-                      FROM {versioncontrol_labels} label
-                        INNER JOIN {versioncontrol_release_labels} rlabel
-                          ON label.label_id = rlabel.label_id
-                      WHERE rlabel.release_nid = %d', $release_nid);
+  $result = db_query("SELECT vcl.label_id, vcl.name, vcl.type 
+                      FROM {versioncontrol_labels} vcl
+                        INNER JOIN {versioncontrol_release_labels} vcrl
+                          ON vcl.label_id = vcrl.label_id
+                      WHERE vcrl.release_nid = %d", $release_nid);
   $label = db_fetch_array($result);
   return $label;
 }
 
 /**
- * Newly associate a release node (as part of a project that is also given)
- * with a VCS label.
+ * Associate a release node with a VCS label.
+ *
+ * @param integer $release_nid
+ *   The node ID of the release node.
+ * @param integer $label_id
+ *   The {versioncontrol_labels}.label_id of the VCAPI label.
+ * @param integer $project_nid
+ *   The node ID of the project node the release is associated with.
  *
  * @return
- *   The result of versioncontrol_release_get_release_label()
- *   for @p $release_nid.
+ *   The result of versioncontrol_release_get_release_label().
+ *
+ * @see versioncontrol_release_get_release_label().
  */
 function versioncontrol_release_insert_release_label($release_nid, $label_id, $project_nid) {
   db_query('INSERT INTO {versioncontrol_release_labels}
@@ -656,18 +676,21 @@ function versioncontrol_release_insert_release_label($release_nid, $label_id, $p
 }
 
 /**
- * Delete the associated release label for the given release node,
- * if any exists.
+ * Delete the associated release label for the given release node.
+ *
+ * @param integer $release_nid
+ *   The node ID of the release node.
  */
 function versioncontrol_release_delete_release_label($release_nid) {
   db_query('DELETE FROM {versioncontrol_release_labels}
             WHERE release_nid = %d', $release_nid);
 }
 
-
 /**
- * Implementation of hook_form_alter() for the "edit" version of the
- * release node form.
+ * Alter the project release node edit form.
+ *
+ * @todo: This is broken and needs to be ported to VCAPI 2.x
+ * @see http://drupal.org/node/1019294
  */
 function versioncontrol_release_project_release_form_alter_edit(&$form, &$form_state, $release_node, $release_label) {
   $project_node = node_load($release_node->project_release['pid']);
