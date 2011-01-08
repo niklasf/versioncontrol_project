@@ -98,10 +98,14 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
   if (!empty($project_node->versioncontrol_project['repo'])) {
     $repo = $project_node->versioncontrol_project['repo'];
     if (!empty($repo->plugins['versioncontrol_release_label_version_mapper'])) {
-      if ($class = ctools_plugin_load_class('versioncontrol_release', 'label_version_mapper', $repo->plugins['versioncontrol_release_label_version_mapper'], 'mapper')) {
-        $mapper = new $class();
-        return $mapper;
-      }
+      $mapper_plugin = $repo->plugins['versioncontrol_release_label_version_mapper'];
+    }
+    else {
+      $mapper_plugin = 'generic';
+    }
+    if ($class = ctools_plugin_load_class('versioncontrol_release', 'label_version_mapper', $mapper_plugin, 'mapper')) {
+      $mapper = new $class();
+      return $mapper;
     }
   }
   return FALSE;
@@ -125,8 +129,11 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
  * @see VersioncontrolReleaseLabelVersionMapperInterface
  */
 function versioncontrol_release_get_version_from_tag($tag, $project_node) {
-  $mapper = versioncontrol_release_get_label_version_mapper();
-  return $mapper->GetVersionFromTag($tag, $project_node);
+  $mapper = versioncontrol_release_get_label_version_mapper($project_node);
+  if (!empty($mapper)) {
+    return $mapper->GetVersionFromTag($tag, $project_node);
+  }
+  return FALSE;
 }
 
 /**
@@ -147,8 +154,11 @@ function versioncontrol_release_get_version_from_tag($tag, $project_node) {
  * @see VersioncontrolReleaseLabelVersionMapperInterface
  */
 function versioncontrol_release_get_version_from_branch($branch, $project_node) {
-  $mapper = versioncontrol_release_get_label_version_mapper();
-  return $mapper->GetVersionFromBranch($branch, $project_node);
+  $mapper = versioncontrol_release_get_label_version_mapper($project_node);
+  if (!empty($mapper)) {
+    return $mapper->GetVersionFromBranch($branch, $project_node);
+  }
+  return FALSE;
 }
 
 /**
