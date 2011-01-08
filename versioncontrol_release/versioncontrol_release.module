@@ -148,8 +148,10 @@ function versioncontrol_release_get_version_from_branch($branch_name, $project_n
 /**
  * Map a VCAPI branch into an object of version information.
  *
- * @param string $branch_name
- *   The name of the version control branch.
+ * @param string $label_name
+ *   The name of the version control label.
+ * @param integer $label_type
+ *   The VCS label types constant indicating if the label is a branch or tag.
  * @param $project_node
  *   The fully loaded node object for the project we're doing the mapping for.
  *

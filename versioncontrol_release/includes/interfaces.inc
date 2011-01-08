@@ -53,8 +53,8 @@ interface VersioncontrolReleaseLabelVersionMapperInterface {
    *
    * @param string $label_name
    *   The string name for a version control branch or tag.
-   * @param int $label_type
-   *   The integer constant indicating if the label is a branch or tag.
+   * @param integer $label_type
+   *   The VCS label types constant indicating if the label is a branch or tag.
    * @param $project_node
    *   The full node object for the project we're doing the mapping for.
    *
