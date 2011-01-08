@@ -114,8 +114,8 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
 /**
  * Map a VCAPI tag into an object of version information.
  *
- * @param VersioncontrolTag $tag
- *   An object representing a version control tag.
+ * @param string $tag_name
+ *   The name of a version control tag.
  * @param $project_node
  *   The fully loaded node object for the project we're doing the mapping for.
  *
@@ -128,10 +128,10 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
  * @see versioncontrol_release_get_label_version_mapper()
  * @see VersioncontrolReleaseLabelVersionMapperInterface
  */
-function versioncontrol_release_get_version_from_tag($tag, $project_node) {
+function versioncontrol_release_get_version_from_tag($tag_name, $project_node) {
   $mapper = versioncontrol_release_get_label_version_mapper($project_node);
   if (!empty($mapper)) {
-    return $mapper->GetVersionFromTag($tag, $project_node);
+    return $mapper->GetVersionFromTag($tag_name, $project_node);
   }
   return FALSE;
 }
@@ -139,8 +139,8 @@ function versioncontrol_release_get_version_from_tag($tag, $project_node) {
 /**
  * Map a VCAPI branch into an object of version information.
  *
- * @param VersioncontrolBranch $branch
- *   An object representing a version control branch.
+ * @param string $branch_name
+ *   The name of the version control branch.
  * @param $project_node
  *   The fully loaded node object for the project we're doing the mapping for.
  *
@@ -153,10 +153,35 @@ function versioncontrol_release_get_version_from_tag($tag, $project_node) {
  * @see versioncontrol_release_get_label_version_mapper()
  * @see VersioncontrolReleaseLabelVersionMapperInterface
  */
-function versioncontrol_release_get_version_from_branch($branch, $project_node) {
+function versioncontrol_release_get_version_from_branch($branch_name, $project_node) {
   $mapper = versioncontrol_release_get_label_version_mapper($project_node);
   if (!empty($mapper)) {
-    return $mapper->GetVersionFromBranch($branch, $project_node);
+    return $mapper->GetVersionFromBranch($branch_name, $project_node);
+  }
+  return FALSE;
+}
+
+/**
+ * Map a VCAPI branch into an object of version information.
+ *
+ * @param string $branch_name
+ *   The name of the version control branch.
+ * @param $project_node
+ *   The fully loaded node object for the project we're doing the mapping for.
+ *
+ * @return object
+ *   The specific elements of the version that a given VCAPI label maps to.
+ *   Can use any of the following fields: 'version_major', 'version_minor',
+ *   'verion_patch', 'version_extra', or 'version_api_tid'.
+ *
+ * @see project_release_get_version()
+ * @see versioncontrol_release_get_label_version_mapper()
+ * @see VersioncontrolReleaseLabelVersionMapperInterface
+ */
+function versioncontrol_release_get_version_from_label($label_name, $label_type, $project_node) {
+  $mapper = versioncontrol_release_get_label_version_mapper($project_node);
+  if (!empty($mapper)) {
+    return $mapper->GetVersionFromLabel($label_name, $label_type, $project_node);
   }
   return FALSE;
 }
