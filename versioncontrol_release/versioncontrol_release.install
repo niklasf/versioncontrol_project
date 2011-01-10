@@ -39,8 +39,10 @@ function versioncontrol_release_schema() {
         'default' => 0,
       ),
     ),
-    'indexes' => array(
-      'label_id_project_nid' => array('project_nid', 'label_id'),
+    'unique keys' => array(
+      // It's not possible to have multiple releases from the same label in
+      // the same project.
+      'label_id_project_nid' => array('label_id', 'project_nid'),
     ),
     'primary key' => array('release_nid'),
   );
