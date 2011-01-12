@@ -463,3 +463,39 @@ function versioncontrol_project_versioncontrol_entity_commit_insert($operation) 
     _versioncontrol_project_block_cache_set($cid, NULL);
   }
 }
+
+/**
+ * Implementation of hook_user().
+ */
+function versioncontrol_project_user($op, &$edit, &$account, $category = NULL) {
+  switch ($op) {
+    case 'view':
+      // Print a list of projects the specified user contributed to.
+      if (!empty($account->uid)) {
+        $result = db_query("SELECT DISTINCT(vcp.nid), n.title, COUNT(o.vc_op_id) AS commits FROM {versioncontrol_operations} o INNER JOIN {versioncontrol_project_projects} vcp ON vcp.repo_id = o.repo_id INNER JOIN {node} n ON n.status = 1 AND n.nid = vcp.nid WHERE o.author_uid = %d GROUP BY vcp.nid, n.title ORDER BY commits DESC", $account->uid);
+        $total = 0;
+        $projects = array();
+        while ($project = db_fetch_object($result)) {
+          $project_link = l($project->title, 'node/'. $project->nid);
+          $projects[] = format_plural($project->commits, '!project (1 commit)', '!project (@count commits)', array('!project' => $project_link));
+          $total += $project->commits;
+        }
+        if ($total > 0) {
+          $projects[] = format_plural($total, 'Total: 1 commit', 'Total: @count commits');
+        }
+        if (!empty($projects)) {
+          $account->content['versioncontrol_project'] = array(
+            '#type' => 'user_profile_category',
+            '#title' => t('Projects'),
+            '#weight' => 10,
+            '#attributes' => array('class' => 'versioncontrol-project-user-commits'),
+          );
+          $account->content['versioncontrol_project']['items'] = array(
+            '#type' => 'user_profile_item',
+            '#value' => theme('item_list', $projects),
+          );
+        }
+      }
+      break;
+  }
+}
