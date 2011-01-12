@@ -115,7 +115,11 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
 function versioncontrol_release_get_version_from_tag($tag_name, $project_node) {
   $mapper = versioncontrol_release_get_label_version_mapper($project_node);
   if (!empty($mapper)) {
-    return $mapper->GetVersionFromTag($tag_name, $project_node);
+    $version = $mapper->GetVersionFromTag($tag_name, $project_node);
+    if (!empty($version)) {
+      $version->pid = $project_node->nid;
+    }
+    return $version;
   }
   return FALSE;
 }
@@ -140,7 +144,11 @@ function versioncontrol_release_get_version_from_tag($tag_name, $project_node) {
 function versioncontrol_release_get_version_from_branch($branch_name, $project_node) {
   $mapper = versioncontrol_release_get_label_version_mapper($project_node);
   if (!empty($mapper)) {
-    return $mapper->GetVersionFromBranch($branch_name, $project_node);
+    $version = $mapper->GetVersionFromBranch($branch_name, $project_node);
+    if (!empty($version)) {
+      $version->pid = $project_node->nid;
+    }
+    return $version;
   }
   return FALSE;
 }
@@ -167,7 +175,11 @@ function versioncontrol_release_get_version_from_branch($branch_name, $project_n
 function versioncontrol_release_get_version_from_label($label_name, $label_type, $project_node) {
   $mapper = versioncontrol_release_get_label_version_mapper($project_node);
   if (!empty($mapper)) {
-    return $mapper->GetVersionFromLabel($label_name, $label_type, $project_node);
+    $version = $mapper->GetVersionFromLabel($label_name, $label_type, $project_node);
+    if (!empty($version)) {
+      $version->pid = $project_node->nid;
+    }
+    return $version;
   }
   return FALSE;
 }
@@ -397,6 +409,9 @@ function versioncontrol_release_form_next_submit($form, &$form_state) {
       $form_state['values']['versioncontrol_release_label_id'];
   }
 
+  $project = $form['project']['#value'];
+  $form_state['storage']['project_release']['pid'] = $project->nid;
+
   $vocab_id = _project_release_get_api_vid();
   if (isset($form_state['values']['taxonomy'][$vocab_id])) {
     $form_state['storage']['project_release']['version_api_tid'] = $form_state['values']['taxonomy'][$vocab_id];
@@ -427,9 +442,12 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
   $label_type_string = ($label['type'] == VERSIONCONTROL_OPERATION_TAG)
     ? t('tag') : t('branch');
 
-  $in_use = db_result(db_query("SELECT label_id FROM {versioncontrol_release_labels} WHERE project_nid = %d AND label_id = %d", $project_node->nid, $label['label_id']));
-  if ($in_use) {
-    form_set_error('tag', t('The !labeltype you have selected is already in use by another release.', array('!labeltype' => $label_type_string)));
+  $existing = db_fetch_object(db_query("SELECT vcrl.release_nid, vcrl.label_id, vcl.name, vcl.type FROM {versioncontrol_release_labels} vcrl INNER JOIN {versioncontrol_labels} vcl ON vcrl.label_id = vcl.label_id WHERE vcrl.project_nid = %d AND vcrl.label_id = %d", $project_node->nid, $label['label_id']));
+  if (!empty($existing)) {
+    $label['type'] = $existing->type;
+    $label['name'] = $existing->name;
+    _versioncontrol_release_project_release_form_existing_release($form, $existing->release_nid, $project_node->nid, 'label', $label);
+    return;
   }
 
   // {project_release_nodes} holds these fields. Even though the cannonical
@@ -449,6 +467,11 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
   $version = versioncontrol_release_get_version_from_label($label['name'], $label['type'], $project_node);
   if (!empty($version)) {
     $version_string = project_release_get_version($version, $project_node);
+    $existing_nid = project_release_exists($version);
+    if (!empty($existing_nid)) {
+      _versioncontrol_release_project_release_form_existing_release($form, $existing_nid, $project_node->nid, 'version', $version_string);
+      return;
+    }
 
     // Stash this in a form value so it'll make it through to validation
     // where the title of the release node is set.
@@ -540,6 +563,55 @@ function versioncontrol_release_project_release_form_alter_add_node_form(&$form,
   // TODO (feature): it'd be nice if this was optional, so that some
   // sites might want to still allow file attachments for releases...
   unset($form['project_release_files']);
+}
+
+/**
+ * Convert the release node form into an error about an existing release.
+ *
+ * @param array $form
+ *   Reference to the release node form to alter.
+ * @param integer $existing_release_nid
+ *   The node ID of the existing release node that would be duplicated.
+ * @param integer $project_nid
+ *   The node ID of the project that the release node form is for.
+ * @param string $error_type
+ *   The cause of the duplicate error. Can be either 'label' or 'version'.
+ * @param $identifier
+ *   The identifier for the given $error_type, either a label array or a
+ *   version string.
+ *
+ * @see versioncontrol_release_project_release_form_alter_add_node_form()
+ */
+function _versioncontrol_release_project_release_form_existing_release(&$form, $existing_release_nid, $project_nid, $error_type, $identifier) {
+  foreach (element_children($form) as $key) {
+    unset($form[$key]);
+  }
+
+  if ($error_type == 'label') {
+    $substitutions = array(
+      '%label_name' => $identifier['name'],
+      '@release_url' => url('node/' . $existing_release_nid),
+    );
+    if ($identifier['type'] == VERSIONCONTROL_OPERATION_TAG) {
+      $error_message = t('The tag you have selected (%label_name) is already in use by <a href="@release_url">another release</a>.', $substitutions);
+    }
+    else {
+      $error_message = t('The branch you have selected (%label_name) is already in use by <a href="@release_url">another release</a>.', $substitutions);
+    }
+  }
+  else {
+    $error_message = t('The version you have selected (%version_string) is already in use by <a href="@release_url">another release</a>.', array('%version_string' => $identifier, '@release_url' => url('node/' . $existing_release_nid)));
+  }
+  $form['error'] = array(
+    '#type' => 'markup',
+    '#prefix' => '<div class="error">',
+    '#value' => $error_message,
+    '#suffix' => '</div>',
+  );
+  $form['try_again'] = array(
+    '#type' => 'markup',
+    '#value' => t('You can <a href="@add_release_url">try again</a>.', array('@add_release_url' => url('node/add/project-release/' . $project_nid))),
+  );
 }
 
 /**
