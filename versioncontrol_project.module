@@ -499,3 +499,51 @@ function versioncontrol_project_user($op, &$edit, &$account, $category = NULL) {
       break;
   }
 }
+
+/**
+ * Gets the auth data related to a project's repository.
+ *
+ * @param string $project_uri
+ *   The project.module's project uri.
+ *
+ * @return array
+ *   A multidimensional array of auth data.
+ */
+function versioncontrol_project_get_auth_data($project_uri) {
+  $data = array();
+  if ($project = node_load(project_get_nid_from_uri($project_uri))) {
+    $repository = $project->versioncontrol_project['repo'];
+    $account_perms = array();
+    $data['project'] = $project->title;
+    $data['project_nid'] = $project->nid;
+    $data['repository_name'] = $repository->name;
+    $data = $repository->getAuthHandler()->getUserData();
+    foreach ($data as $uid => $value) {
+      $account = new stdClass;
+      $account = user_load($uid);
+      $account_perms[$account->name] = $value;
+      $account_perms[$account->name]['name'] = $account->name;
+      $account_perms[$account->name]['pass'] = $account->pass;
+    }
+    $data['users'] = $account_perms;
+    drupal_alter('versioncontrol_project_auth_data', $data, $repository);
+  }
+  return $data;
+}
+
+/**
+ * Implementation of hook_versioncontrol_project_auth_data_alter().
+ *
+ * Adds user's sshkeys to the repository data if the sshkey module is present.
+ */
+function versioncontrol_project_versioncontrol_project_auth_data_alter(&$data, $repository) {
+  if (module_exists('sshkey')) {
+    foreach ($data as $name => &$value) {
+      module_load_include('inc', 'sshkey');
+      $keys = sshkey_user_public_keys_list($value['uid']);
+      foreach ($keys as &$key) {
+        $value['ssh_keys'][$key['name']] = $key["fingerprint"];
+      }
+    }
+  }
+}
