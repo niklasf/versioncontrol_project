@@ -517,8 +517,8 @@ function versioncontrol_project_get_auth_data($project_uri) {
     $data['project'] = $project->title;
     $data['project_nid'] = $project->nid;
     $data['repository_name'] = $repository->name;
-    $data = $repository->getAuthHandler()->getUserData();
-    foreach ($data as $uid => $value) {
+    $auth_data = $repository->getAuthHandler()->getUserData();
+    foreach ($auth_data as $uid => $value) {
       $account = new stdClass;
       $account = user_load($uid);
       $account_perms[$account->name] = $value;
@@ -538,11 +538,12 @@ function versioncontrol_project_get_auth_data($project_uri) {
  */
 function versioncontrol_project_versioncontrol_project_auth_data_alter(&$data, $repository) {
   if (module_exists('sshkey')) {
-    foreach ($data as $name => &$value) {
+    foreach ($data['users'] as $name => &$value) {
       module_load_include('inc', 'sshkey');
-      $keys = sshkey_user_public_keys_list($value['uid']);
+      $keys = sshkey_load_all_by_entity('user', $value['uid']);
+      $value['ssh_keys'] = array();
       foreach ($keys as &$key) {
-        $value['ssh_keys'][$key['name']] = $key["fingerprint"];
+        $value['ssh_keys'][$key->title] = $key->fingerprint;
       }
     }
   }
