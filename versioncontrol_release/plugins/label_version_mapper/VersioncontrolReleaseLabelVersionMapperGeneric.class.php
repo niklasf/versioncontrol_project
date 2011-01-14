@@ -9,14 +9,14 @@
 class VersioncontrolReleaseLabelVersionMapperGeneric implements VersioncontrolReleaseLabelVersionMapperInterface {
 
   public function GetVersionFromTag($tag_name, $project_node) {
-    return GetVersionFromLabel($tag_name, VERSIONCONTROL_LABEL_TAG);
+    return $this->GetVersionFromLabel($tag_name, VERSIONCONTROL_LABEL_TAG, $project_node);
   }
 
   public function GetVersionFromBranch($branch_name, $project_node) {
-    return GetVersionFromLabel($branch_name, VERSIONCONTROL_LABEL_BRANCH);
+    return $this->GetVersionFromLabel($branch_name, VERSIONCONTROL_LABEL_BRANCH, $project_node);
   }
 
-  protected function GetVersionFromLabel($label_name, $label_type) {
+  public function GetVersionFromLabel($label_name, $label_type, $project_node) {
     $fields = array('version_major', 'version_minor', 'version_patch');
     $version = array();
 
