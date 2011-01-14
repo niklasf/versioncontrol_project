@@ -548,3 +548,14 @@ function versioncontrol_project_versioncontrol_project_auth_data_alter(&$data, $
     }
   }
 }
+
+/**
+ * Implemenation of hook_project_page_link_alter().
+ */
+function versioncontrol_project_project_page_link_alter(&$links, $node) {
+  // Force the link for now, see http://drupal.org/node/1026594
+  $repo = $node->versioncontrol_project['repo'];
+  $link = $repo->getUrlHandler()->getRepositoryViewUrl();
+  $links['development']['links']['browse_repository'] = l(t('Repository viewer'), $link);
+}
+
