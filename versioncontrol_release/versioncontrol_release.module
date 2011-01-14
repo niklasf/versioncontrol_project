@@ -85,6 +85,9 @@ function versioncontrol_release_get_label_version_mapper($project_node) {
       $mapper_plugin = $repo->plugins['versioncontrol_release_label_version_mapper'];
     }
     else {
+      $mapper_plugin = variable_get('versioncontrol_release_label_version_mapper', '');
+    }
+    if (empty($mapper_plugin)) {
       $mapper_plugin = 'generic';
     }
     if ($class = ctools_plugin_load_class('versioncontrol_release', 'label_version_mapper', $mapper_plugin, 'mapper')) {
