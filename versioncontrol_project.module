@@ -541,7 +541,7 @@ function versioncontrol_project_versioncontrol_project_auth_data_alter(&$data, $
     foreach ($data['users'] as $name => &$value) {
       module_load_include('inc', 'sshkey');
       $keys = sshkey_load_all_by_entity('user', $value['uid']);
-      $value['ssh_keys'] = array();
+      $value['ssh_keys'][' '] = ' ';
       foreach ($keys as &$key) {
         $value['ssh_keys'][$key->title] = $key->fingerprint;
       }

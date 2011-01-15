@@ -26,6 +26,6 @@ function versioncontrol_project_drush_command() {
 /**
  * Returns a json encoded string of authorization data.
  */
-function drush_versioncontrol_project_vcs_auth_data($project_uri) {
+function drush_versioncontrol_project_vcs_auth_data($project_uri = '') {
   drush_print(json_encode(versioncontrol_project_get_auth_data($project_uri)));
 }
