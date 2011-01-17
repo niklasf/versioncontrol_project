@@ -22,7 +22,7 @@ function versioncontrol_release_menu() {
     'description' => 'Configure how project release nodes will be integrated with version control systems.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('versioncontrol_release_admin_form'),
-    'access callback' => 'versioncontrol_admin_access',
+    'access arguments' => array('administer version control systems'),
     'type' => MENU_LOCAL_TASK,
   );
   return $items;
@@ -723,7 +723,7 @@ function versioncontrol_release_nodeapi(&$node, $op, $arg = NULL) {
  *   or FALSE if there's no label.
  */
 function versioncontrol_release_get_release_label($release_nid) {
-  $result = db_query("SELECT vcl.label_id, vcl.name, vcl.type 
+  $result = db_query("SELECT vcl.label_id, vcl.name, vcl.type
                       FROM {versioncontrol_labels} vcl
                         INNER JOIN {versioncontrol_release_labels} vcrl
                           ON vcl.label_id = vcrl.label_id
