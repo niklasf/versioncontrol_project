@@ -252,7 +252,7 @@ $handler->override_option('fields', array(
     'hide_empty' => 0,
     'empty_zero' => 0,
     'view' => 'commitlog_commit_items',
-    'display' => 'block_2',
+    'display' => 'block_4',
     'arguments' => '[vc_op_id]',
     'query_aggregation' => 1,
     'exclude' => 0,
