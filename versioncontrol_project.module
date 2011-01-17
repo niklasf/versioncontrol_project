@@ -24,6 +24,14 @@ function versioncontrol_project_menu() {
     'access callback' => 'node_access',
     'access arguments' => array('view', 1),
   );
+  $items['node/%project_node/commits'] = array(
+    'title' => 'Committers',
+    'page callback' => 'versioncontrol_project_commits_page',
+    'page arguments' => array(1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'versioncontrol_project_commits_page_access',
+    'access arguments' => array(1),
+  );
 
   return $items;
 }
@@ -32,6 +40,13 @@ function versioncontrol_project_ctools_plugin_directory($module, $plugin) {
   if ($module == 'versioncontrol') {
     return "plugins/$plugin";
   }
+}
+
+/**
+ * Helper function to control access to per-project commit view.
+ */
+function versioncontrol_project_commits_page_access($node) {
+  return node_access('view', $node) && user_access('access commit messages');
 }
 
 /**
@@ -558,6 +573,17 @@ function versioncontrol_project_project_page_link_alter(&$links, $node) {
     $repo = $node->versioncontrol_project['repo'];
     $link = $repo->getUrlHandler()->getRepositoryViewUrl();
     $links['development']['links']['browse_repository'] = l(t('Repository viewer'), $link);
+    $links['development']['links']['view_commits'] = l(t('View commits'), "node/$node->nid/commits");
   }
 }
 
+/**
+ * Menu callback for per-project commits page
+ */
+function versioncontrol_project_commits_page($node) {
+  drupal_set_title(t('Commits for @project', array('@project' => $node->title)));
+  $set = versioncontrol_get_views_set('project_commit_view');
+  $view = $set->getViewName();
+
+  return views_embed_view($view, 'default', $node->nid);
+}
