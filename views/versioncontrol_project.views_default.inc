@@ -3,7 +3,7 @@
 
 /**
  * @file
- * Scans the 'default_views' subdirectory for default views by Project module.
+ * Scans the 'default_views' subdirectory for default views by Version Control Project module.
  */
 
 /**
