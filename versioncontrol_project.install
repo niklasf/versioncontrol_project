@@ -34,6 +34,9 @@ function versioncontrol_project_schema() {
       ),
     ),
     'primary key' => array('nid'),
+    'indexes' => array(
+      'repo_id' => array('repo_id'),
+    ),
   );
   $schema['versioncontrol_project_maintainers_block_cache'] = array(
     'description' => t('Cache for Versioncontrol-specific blocks that cannot rely on the normal block cache.'),
@@ -92,4 +95,17 @@ function versioncontrol_project_enable() {
  */
 function versioncontrol_project_uninstall() {
   drupal_uninstall_schema('versioncontrol_project');
+}
+
+/**
+ * Implementation of hook_update_N().
+ *
+ * Add an index to {versioncontrol_project_projects}.repo_id
+ */
+function versioncontrol_project_update_6200(&$sandbox) {
+  $ret = array();
+
+  db_add_index($ret, 'versioncontrol_project_projects', 'repo_id', array('repo_id'));
+  
+  return $ret;
 }
