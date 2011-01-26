@@ -532,6 +532,7 @@ function versioncontrol_project_get_auth_data($project_uri) {
     $data['project'] = $project->title;
     $data['project_nid'] = $project->nid;
     $data['repository_name'] = $repository->name;
+    $data['repo_id'] = $repository->repo_id;
     $auth_data = $repository->getAuthHandler()->getUserData();
     foreach ($auth_data as $uid => $value) {
       $account = new stdClass;
