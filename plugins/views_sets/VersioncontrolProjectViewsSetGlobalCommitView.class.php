@@ -4,4 +4,8 @@ class VersioncontrolProjectViewsSetGlobalCommitView extends VersioncontrolViewsS
   protected $setName = 'project_global_commit_view';
 
   protected $baseView = 'vc_project_global_commits';
+
+  protected $defaultViews = array(
+    'git' => 'vc_git_project_global_commits',
+  );
 }
