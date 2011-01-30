@@ -460,7 +460,7 @@ function theme_versioncontrol_project_maintainer_list($node, $maintainers, $max_
  */
 function versioncontrol_project_get_project_maintainers($repo_id) {
   $maintainers = array();
-  $repo = versioncontrol_repository_load(array($repo_id));
+  $repo = versioncontrol_repository_load($repo_id);
   if (versioncontrol_project_verify_repo_auth_handler($repo)) {
     $auth_data = $repo->getAuthHandler()->getUserData();
     foreach ($auth_data as $maintainer) {
