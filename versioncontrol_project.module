@@ -24,9 +24,17 @@ function versioncontrol_project_menu() {
     'access arguments' => array('view', 1),
   );
   $items['node/%project_node/commits'] = array(
-    'title' => 'Committers',
+    'title' => 'Commits',
     'page callback' => 'versioncontrol_project_commits_page',
-    'page arguments' => array(1),
+    'page arguments' => array('default', 1),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'versioncontrol_project_commits_page_access',
+    'access arguments' => array(1),
+  );
+  $items['node/%project_node/commits/feed'] = array(
+    'title' => 'Commits',
+    'page callback' => 'versioncontrol_project_commits_page',
+    'page arguments' => array('feed', 1),
     'type' => MENU_CALLBACK,
     'access callback' => 'versioncontrol_project_commits_page_access',
     'access arguments' => array(1),
@@ -604,10 +612,24 @@ function versioncontrol_project_project_page_link_alter(&$links, $node) {
 /**
  * Menu callback for per-project commits page
  */
-function versioncontrol_project_commits_page($node) {
+function versioncontrol_project_commits_page($display_type, $node) {
+  //TODO replace this way in favour of setting title through the view
+  //     itself: aka implement title_query() on a
+  //     versioncontrol_project_handler_argument_node_nid analogous to
+  //     versioncontrol_handler_argument_repository_repo_id
   drupal_set_title(t('Commits for @project', array('@project' => $node->title)));
   $set = versioncontrol_get_views_set('project_commit_view');
-  $view = $set->getViewName();
+  if ($node->versioncontrol_project['repo'] instanceof VersioncontrolRepository) {
+    $repository = $node->versioncontrol_project['repo'];
+    $view_name = $set->getViewNameByEntity($repository);
+  }
+  else {
+    $view_name = $set->getViewName();
+  }
+  $feed_url = "node/{$node->nid}/commits/feed";
 
-  return views_embed_view($view, 'default', $node->nid);
+  if ($display_type == 'feed') {
+    return versioncontrol_render_commitlog_view($view_name, 'feed', array($node->nid), $feed_url);
+  }
+  return versioncontrol_render_commitlog_view($view_name, 'default', array($node->nid), '', $feed_url);
 }
