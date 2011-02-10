@@ -144,7 +144,7 @@ function versioncontrol_project_set_project($project_id, $repo_id) {
   }
 }
 
-function versioncontrol_project_query_versioncontrol_repository_load_multiple_alter(QueryAlterableInterface $query) {
+function versioncontrol_project_query_versioncontrol_repo_load_multiple_alter(QueryAlterableInterface $query) {
   $alias = $query->leftJoin('versioncontrol_project_projects', 'vcpp', 'base.repo_id = vcpp.repo_id');
   $query->addField($alias, 'nid', 'project_nid');
 }
