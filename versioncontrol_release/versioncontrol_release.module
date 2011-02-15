@@ -781,18 +781,61 @@ function versioncontrol_release_project_release_form_alter_edit(&$form, &$form_s
   $backend = $repo->getBackend();
   $release_label = $release_node->versioncontrol_release['label'];
   $label_type_string = ($release_label['type'] == VERSIONCONTROL_OPERATION_TAG) ? t('tag') : t('branch');
+
+  // Special case to allow editing HEAD/master releases to move them to more
+  // specific versions.
+  if ($release_label['type'] == VERSIONCONTROL_OPERATION_BRANCH) {
+    $ambiguous_labels = variable_get('versioncontrol_release_ambiguous_lables', array('HEAD', 'master'));
+    if (in_array($release_label['name'], $ambiguous_labels)) {
+      $branches = $repo->loadBranches(array(), array(), array('callback' => 'versioncontrol_release_load_labels_query_alter'));
+      if (!empty($branches)) {
+        foreach ($branches as $branch) {
+          $version = versioncontrol_release_get_version_from_branch($branch->name, $project_node);          
+          $version_string = project_release_get_version($version, $project_node);
+          if ($version_string == $release_node->project_release['version']) {
+            $label_options = array(
+              $release_label['label_id'] => $release_label['name'],
+              $branch->label_id => $branch->name,
+            );
+            $form['buttons']['submit']['#submit'][] = 'versioncontrol_release_project_release_form_edit_submit';
+            break;
+          }
+        }
+      }
+    }
+  }
+
   // Hide whatever project_release thinks.
   unset($form['rel_id']['tag']);
-  // Add our own element.
-  $form['rel_id']['vcs_label'] = array(
-    '#type' => 'textfield',
-    '#title' => t('!backend_name !label_type', array('!backend_name' => $backend->name, '!label_type' => $label_type_string)),
-    '#default_value' => $release_label['name'],
+  // Add a value so that project_release isn't confused in its own submit
+  // handler. If we hit the special case of moving a HEAD/master release to a
+  // more specific branch, we'll update this record ourselves.
+  $form['project_release']['tag'] = array(
+    '#type' => 'value',
     '#value' => $release_label['name'],
-    '#attributes' => array('disabled' => 'disabled'),
-    '#required' => TRUE,
-    '#size' => strlen($release_label['name']) + 5,
   );
+  // Add our own element.
+  if (!empty($label_options)) {
+    // We have multiple options for the label, so include a selector.
+    $form['rel_id']['vcs_label'] = array(
+      '#type' => 'select',
+      '#title' => t('!backend_name !label_type', array('!backend_name' => $backend->name, '!label_type' => $label_type_string)),
+      '#default_value' => $release_label['label_id'],
+      '#options' => $label_options,
+    );
+  }
+  else {
+    // Default case of the existing label, so present a disabled text field.
+    $form['rel_id']['vcs_label'] = array(
+      '#type' => 'textfield',
+      '#title' => t('!backend_name !label_type', array('!backend_name' => $backend->name, '!label_type' => $label_type_string)),
+      '#default_value' => $release_label['name'],
+      '#value' => $release_label['name'],
+      '#attributes' => array('disabled' => 'disabled'),
+      '#required' => TRUE,
+      '#size' => strlen($release_label['name']) + 5,
+    );
+  }
 
   // If the version is identical to the VCS label, hide the version.
   if ($form['rel_id']['version']['#default_value'] == $release_label['name']) {
@@ -826,4 +869,17 @@ function versioncontrol_release_project_release_form_alter_edit(&$form, &$form_s
       $form['project_release_files'][$key]['delete']['#access'] = FALSE;
     }
   }
+}
+
+function versioncontrol_release_project_release_form_edit_submit($form, &$form_state) {
+  $release_node = $form['#node'];
+  $project_node = node_load($release_node->project_release['pid']);
+  db_query("UPDATE {versioncontrol_release_labels} SET label_id = %d WHERE release_nid = %d AND project_nid = %d", $form_state['values']['vcs_label'], $release_node->nid, $project_node->nid);
+  if (!db_affected_rows()) {
+    db_query("INSERT INTO {versioncontrol_release_labels} (release_nid, label_id, project_nid) VALUES (%d, %d, %d)", $release_node->nid, $form_state['values']['vcs_label'], $project_node->nid);
+  }
+  $repo = $project_node->versioncontrol_project['repo'];
+  $branches = $repo->loadBranches(array($form_state['values']['vcs_label']));
+  $branch = reset($branches);
+  db_query("UPDATE {project_release_nodes} SET tag = '%s' WHERE nid = %d", $branch->name, $release_node->nid);
 }
