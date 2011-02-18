@@ -15,7 +15,6 @@ function versioncontrol_project_views_data() {
     'node' => array(
       'left_field' => 'nid',
       'field' => 'nid',
-      'type' => 'INNER',
     ),
     'versioncontrol_repositories' => array(
       'left_field' => 'repo_id',
@@ -25,12 +24,10 @@ function versioncontrol_project_views_data() {
     'versioncontrol_operations' => array(
       'left_field' => 'repo_id',
       'field' => 'repo_id',
-      'type' => 'INNER',
     ),
     'versioncontrol_item_revisions' => array(
       'left_field' => 'repo_id',
       'field' => 'repo_id',
-      'type' => 'INNER',
     ),
   );
   return $data;
@@ -44,19 +41,16 @@ function versioncontrol_project_views_data_alter(&$data) {
     'left_field' => 'repo_id',
     'left_table' => 'versioncontrol_project_projects',
     'field' => 'repo_id',
-    'type' => 'INNER',
   );
   $data['node']['table']['join']['versioncontrol_operations'] = array(
     'left_field' => 'nid',
     'left_table' => 'versioncontrol_project_projects',
     'field' => 'nid',
-    'type' => 'INNER',
   );
   $data['node']['table']['join']['versioncontrol_item_revisions'] = array(
     'left_field' => 'nid',
     'left_table' => 'versioncontrol_project_projects',
     'field' => 'nid',
-    'type' => 'INNER',
   );
   $data['node']['table']['join']['versioncontrol_repositories'] = array(
     'left_field' => 'nid',
