@@ -547,7 +547,7 @@ function versioncontrol_project_get_auth_data($project_uri) {
       $account_perms[$account->name]['pass'] = $account->pass;
     }
     $data['users'] = $account_perms;
-    drupal_alter('versioncontrol_project_auth_data', $data, $repository);
+    drupal_alter('versioncontrol_project_auth_data', $data, $repository, $project);
   }
   return $data;
 }
