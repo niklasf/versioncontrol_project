@@ -362,11 +362,15 @@ function versioncontrol_release_project_release_form_alter_add_select_label(&$fo
     );
   }
   else {
-    // TODO: make this a setting or generate the text in some other way?
     $err = t('There are no tags or branches for this project that do not already have a release associated with them.');
     $err .= '<p>' . t('To create a release, you must first create either a new tag on one of the existing branches for this project, or you must add a new branch.') . '</p>';
     $err .= '<p>' . t('Once you have created a tag or branch that should be used for your new release, try pressing the %retry link to continue.', array('%retry' => t('Retry'))) . '</p>';
-    drupal_set_message($err, 'warning');
+    $form['error'] = array(
+      '#type' => 'markup',
+      '#prefix' => '<div class="warning">',
+      '#value' => $err,
+      '#suffix' => '</div>',
+    );
 
     unset($form['buttons']['preview']);
     $form['retry'] = array(
