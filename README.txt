@@ -1,4 +1,3 @@
-$Id$
 
 Version Control / Project Node Integration -
 Integrates project nodes (provided by the Project module)
