@@ -447,7 +447,8 @@ function theme_versioncontrol_project_maintainer_list($node, $maintainers, $max_
     $items[] = $item;
   }
   $output = theme('item_list', $items);
-  $output .= l('View all committers', 'node/'. $node->nid .'/committers');
+  $output .= '<div id="project-committers">' . l('View all committers', 'node/' . $node->nid . '/committers') . '</div>';
+  $output .= '<div id="project-commits">' . l('View commits', 'node/' . $node->nid . '/commits') . '</div>';
   return $output;
 }
 
