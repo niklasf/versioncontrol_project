@@ -479,8 +479,10 @@ function versioncontrol_project_versioncontrol_entity_commit_insert($operation) 
   if (isset($operation->repo_id)) {
     // invalidate block cache for maintainers block
     $project = versioncontrol_project_project_load($operation->repo_id);
-    $cid = 'project_maintainers:'. $project->nid;
-    _versioncontrol_project_block_cache_set($cid, NULL);
+    if (!empty($project)) {
+      $cid = 'project_maintainers:'. $project->nid;
+      _versioncontrol_project_block_cache_set($cid, NULL);
+    }
   }
 }
 
