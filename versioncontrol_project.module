@@ -474,6 +474,9 @@ function versioncontrol_project_get_project_maintainers($repo_id) {
 
 /**
  * Implementation of hook_versioncontrol_entity_commit_insert().
+ *
+ * TODO This should be moved to be tied to hooks notifying that history syncs
+ * are happening, rather than the individual entity insert.
  */
 function versioncontrol_project_versioncontrol_entity_commit_insert($operation) {
   if (isset($operation->repo_id)) {
