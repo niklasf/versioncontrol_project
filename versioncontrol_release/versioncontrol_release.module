@@ -262,7 +262,7 @@ function versioncontrol_project_get_label_caption($label_name, $version, $projec
  * associated with them.  So we LEFT JOIN on {versioncontrol_release_labels}
  * and ensure that the label_id is NULL in from that table.
  */
-function versioncontrol_release_load_labels_query_alter(&$query, $ids, $conditions, $options) {
+function versioncontrol_release_load_labels_query_alter($query, $ids, $conditions, $options) {
   $query->leftjoin('versioncontrol_release_labels', 'vcrl', 'base.label_id = vcrl.label_id');
   $query->isNull('vcrl.label_id');
 }
