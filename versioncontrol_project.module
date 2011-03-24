@@ -35,6 +35,9 @@ function versioncontrol_project_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
 function versioncontrol_project_ctools_plugin_directory($module, $plugin) {
   if ($module == 'versioncontrol') {
     return "plugins/$plugin";
@@ -143,6 +146,16 @@ function versioncontrol_project_set_project($project_id, $repo_id) {
   }
 }
 
+/**
+ * Implements hook_query_TAG_alter().
+ *
+ * Ensure that, for any repositories that are associated with projects, the
+ * project nid is added directly to the
+ * If the repository is associated with a project, add the project nid directly
+ * to the repository object
+ *
+ * @param QueryAlterableInterface $query
+ */
 function versioncontrol_project_query_versioncontrol_repo_load_multiple_alter(QueryAlterableInterface $query) {
   $alias = $query->leftJoin('versioncontrol_project_projects', 'vcpp', 'base.repo_id = vcpp.repo_id');
   $query->addField($alias, 'nid', 'project_nid');
