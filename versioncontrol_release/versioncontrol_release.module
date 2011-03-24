@@ -255,6 +255,88 @@ function versioncontrol_project_get_label_caption($label_name, $version, $projec
 }
 
 /**
+ * Implements hook_versioncontrol_repository_pre_resync().
+ *
+ * Respond to an upcoming repo resync by seeing if the repository has any
+ * release nodes mapped to it, and preparing accordingly.
+ */
+function versioncontrol_release_versioncontrol_repository_pre_resync(VersioncontrolRepository $repository, $bypass) {
+  if (!empty($repository->project_nid)) {
+    $sql = "SELECT vl.name, vl.type, prn.nid AS release_nid
+      FROM {versioncontrol_labels} vl
+      INNER JOIN {project_release_nodes} prn ON vl.name = prn.tag
+      WHERE vl.repo_id = %d AND prn.pid = %d";
+    $result = db_query($sql, $repository->repo_id, $repository->project_nid);
+
+  // This approach uses the join table, which means it misses any release labels
+  // that are already incorrectly mapped. Kept here in case the more robust
+  // method proves to have unforeseen consequences.
+//    $sql = "SELECT vl.name, vl.type, vrl.release_nid
+//      FROM {versioncontrol_labels} vl
+//      INNER JOIN {versioncontrol_release_labels} vrl ON vl.label_id = vrl.label_id
+//      WHERE vl.repo_id = %d";
+//    $result = db_query($sql, $repository->repo_id);
+
+    $labels = array();
+    while ($row = db_fetch_object($result)) {
+      $labels[] = $row;
+    }
+
+    // Only set the cache if there were results that'll need refreshing later
+    if (!empty($labels)) {
+      ctools_static('versioncontrol_release_resync_recover_' . $repository->repo_id, $labels);
+    }
+
+    // TODO maybe also set all corresponding vrl.label_id values to 0 to be more
+    // error-safe?
+  }
+}
+
+/**
+ * Implements hook_versioncontrol_repository_post_resync().
+ *
+ * Re-associate release nodes with newly generated label ids as needed.
+ */
+function versioncontrol_release_versioncontrol_repository_post_resync(VersioncontrolRepository $repository, $bypass) {
+  $labels = ctools_static('versioncontrol_release_resync_recover_' . $repository->repo_id);
+  if (!empty($labels)) {
+    $release_nids = $names = array();
+    foreach ($labels as $label) {
+      $names[] = $label->name;
+      $release_nids[$label->name] = $label->release_nid;
+    }
+
+    $results = db_select('versioncontrol_labels', 'vl')
+      ->fields('vl', array('label_id', 'name'))
+      ->condition('repo_id', $repository->repo_id)
+      ->condition('name', $names)
+      ->execute()->fetchAllKeyed(0, 1);
+
+    $found_names = array();
+    foreach ($results as $label_id => $name) {
+      db_update('versioncontrol_release_labels')
+        ->fields(array('label_id' => $label_id))
+        ->condition('release_nid', $release_nids[$name])
+        ->execute();
+
+      $found_names[] = $name;
+    }
+
+    foreach (array_diff($names, $found_names) as $missing_name) {
+      $vars = array(
+        '%label' => $missing_name,
+        '%repo_id' => $repository->repo_id,
+        '%repo_name' => $repository->name,
+      );
+      $str = 'Release-attached label "%label" was missing after from-scratch resynchronization of repository "%repo_name" (id: %repo_id).';
+      watchdog('vc_project', $str, $vars, WATCHDOG_CRITICAL);
+    }
+  }
+
+  ctools_static_reset('versioncontrol_release_resync_recover_' . $repository->repo_id);
+}
+
+/**
  * Callback function to alter the query when loading VCAPI labels.
  *
  * When we're generating the list of available labels for the release node
