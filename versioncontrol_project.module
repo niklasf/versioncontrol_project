@@ -329,7 +329,7 @@ function versioncontrol_project_get_project_committers($nid, $order = '', $only_
     $order = ' ORDER BY last_commit DESC';
   }
   $repo = versioncontrol_project_repository_load($nid);
-  $query = "SELECT o.author_uid as uid, MIN(o.date) AS first_commit, MAX(o.date) AS last_commit, COUNT(o.vc_op_id) AS commits, u.name FROM {versioncontrol_operations} o INNER JOIN {users} u ON o.author_uid = u.uid WHERE o.repo_id = %d AND o.author_uid != 0 GROUP BY o.repo_id, o.author_uid $order";
+  $query = "SELECT o.author_uid as uid, MIN(o.author_date) AS first_commit, MAX(o.author_date) AS last_commit, COUNT(o.vc_op_id) AS commits, u.name FROM {versioncontrol_operations} o INNER JOIN {users} u ON o.author_uid = u.uid WHERE o.repo_id = %d AND o.author_uid != 0 GROUP BY o.repo_id, o.author_uid $order";
   $result = db_query($query, $repo->repo_id);
   $committers = array();
   while ($committer = db_fetch_object($result)) {
